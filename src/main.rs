@@ -1,15 +1,17 @@
 // Test that we can paint to the screen using glow directly.
 
-use std::io::Cursor;
+use std::error::Error;
+use std::io::{Cursor, ErrorKind, Read, Write};
 use std::thread::JoinHandle;
 use eframe::egui;
 use eframe::egui::{Frame, Margin};
 use image::{ImageOutputFormat, RgbImage};
-use log::info;
+use log::{info, warn};
+use serde::{Deserialize, Serialize};
 use single_value_channel::{Receiver, Updater};
 use uuid::Uuid;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([1920.0, 1080.0]),
@@ -21,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
 
-            Box::<RaytracerApp>::default()
+            Box::new(RaytracerApp::with_settings(load_settings().unwrap_or_default()))
         }),
     )?;
     Ok(())
@@ -57,11 +59,7 @@ impl Default for RaytracerApp {
         Self {
             image,
             image_id: Uuid::new_v4(),
-            render_settings: RenderSettings {
-                width: 1920,
-                height: 1080,
-                samples: 100,
-            },
+            render_settings: RenderSettings::default(),
             render_handle: None,
             progress_updater: updater,
             progress: receiver,
@@ -125,14 +123,63 @@ impl eframe::App for RaytracerApp {
                 ui.end_row();
             }
         });
+
+        if ctx.input(|i| i.viewport().close_requested()) {
+            let _ = save_settings(&self.render_settings).inspect_err(|e| warn!("Error saving settings: {}", e));
+        }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 struct RenderSettings {
     width: u32,
     height: u32,
     samples: u32,
+}
+
+impl Default for RenderSettings {
+    fn default() -> Self {
+        Self {
+            width: 1920,
+            height: 1080,
+            samples: 100,
+        }
+    }
+}
+
+fn save_settings(settings: &RenderSettings) -> Result<(), std::io::Error> {
+    let path = get_settings_path();
+    let parent_dir = path.parent().unwrap();
+    if !parent_dir.exists() {
+        std::fs::create_dir_all(parent_dir)?;
+    }
+    let mut file = std::fs::File::create(path)?;
+    let toml = toml::to_string(settings).unwrap();
+    file.write_all(toml.as_bytes())
+}
+
+fn load_settings() -> Result<RenderSettings, Box<dyn Error>> {
+    let path = get_settings_path();
+    let mut file = match std::fs::File::open(path) {
+        Ok(file) => file,
+        Err(err) if err.kind() == ErrorKind::NotFound => {
+            info!("No settings file found, using defaults");
+            return Ok(RenderSettings::default());
+        }
+        Err(err) => return Err(Box::new(err)),
+    };
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    let settings: RenderSettings = toml::from_str(contents.as_str())?;
+    Ok(settings)
+}
+
+fn get_settings_path() -> std::path::PathBuf {
+    let mut path = dirs::config_dir().unwrap();
+    path.push("raytracer");
+    path.push("settings.toml");
+    path
 }
 
 fn render(settings: RenderSettings, sender: Updater<f32>, context: &mut egui::Context) -> Vec<u8> {
