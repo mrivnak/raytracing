@@ -1,14 +1,14 @@
 // Test that we can paint to the screen using glow directly.
 
-use std::error::Error;
-use std::io::{Cursor, ErrorKind, Read, Write};
-use std::thread::JoinHandle;
 use eframe::egui;
 use eframe::egui::{Frame, Margin};
 use image::{ImageOutputFormat, RgbImage};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use single_value_channel::{Receiver, Updater};
+use std::error::Error;
+use std::io::{Cursor, ErrorKind, Read, Write};
+use std::thread::JoinHandle;
 use uuid::Uuid;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -23,7 +23,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
 
-            Box::new(RaytracerApp::with_settings(load_settings().unwrap_or_default()))
+            Box::new(RaytracerApp::with_settings(
+                load_settings().unwrap_or_default(),
+            ))
         }),
     )?;
     Ok(())
@@ -82,28 +84,33 @@ impl eframe::App for RaytracerApp {
             bytes: self.image.clone().into(),
         };
 
-
-        egui::CentralPanel::default().frame(Frame { inner_margin: Margin::same(0.), ..Default::default()}).show(ctx, |ui| {
-            if !self.image.is_empty() {
-                ui.add(egui::Image::new(image_source));
-            }
-        });
-
-        egui::Window::new("Render settings").show(ctx, |ui| {
-            egui::Grid::new("render_settings").num_columns(2).show(ui, |ui| {
-                ui.label("Height");
-                ui.add(egui::DragValue::new(&mut self.render_settings.height).speed(1.0));
-                ui.end_row();
-
-                ui.label("Width");
-                ui.add(egui::DragValue::new(&mut self.render_settings.width).speed(1.0));
-                ui.end_row();
-
-                ui.label("Samples");
-                ui.add(egui::DragValue::new(&mut self.render_settings.samples).speed(1.0));
-                ui.end_row();
+        egui::CentralPanel::default()
+            .frame(Frame {
+                inner_margin: Margin::same(0.),
+                ..Default::default()
+            })
+            .show(ctx, |ui| {
+                if !self.image.is_empty() {
+                    ui.add(egui::Image::new(image_source));
+                }
             });
 
+        egui::Window::new("Render settings").show(ctx, |ui| {
+            egui::Grid::new("render_settings")
+                .num_columns(2)
+                .show(ui, |ui| {
+                    ui.label("Height");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.height).speed(1.0));
+                    ui.end_row();
+
+                    ui.label("Width");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.width).speed(1.0));
+                    ui.end_row();
+
+                    ui.label("Samples");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.samples).speed(1.0));
+                    ui.end_row();
+                });
 
             if self.render_handle.is_none() {
                 if ui.button("Render").clicked() {
@@ -125,7 +132,8 @@ impl eframe::App for RaytracerApp {
         });
 
         if ctx.input(|i| i.viewport().close_requested()) {
-            let _ = save_settings(&self.render_settings).inspect_err(|e| warn!("Error saving settings: {}", e));
+            let _ = save_settings(&self.render_settings)
+                .inspect_err(|e| warn!("Error saving settings: {}", e));
         }
     }
 }
@@ -191,7 +199,9 @@ fn render(settings: RenderSettings, sender: Updater<f32>, context: &mut egui::Co
             let g = (y as f32 / settings.height as f32) * 255.0;
             let b = 0.0;
             image.put_pixel(x, y, image::Rgb([r as u8, g as u8, b as u8]));
-            let _ = sender.update((x * settings.height + y) as f32 / (settings.width * settings.height) as f32);
+            let _ = sender.update(
+                (x * settings.height + y) as f32 / (settings.width * settings.height) as f32,
+            );
             context.request_repaint();
         }
     }
@@ -207,4 +217,3 @@ fn render(settings: RenderSettings, sender: Updater<f32>, context: &mut egui::Co
         }
     }
 }
-
