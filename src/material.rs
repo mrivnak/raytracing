@@ -44,6 +44,7 @@ impl Reflect for Lambertian {
 
 pub struct Metal {
     pub albedo: Color,
+    pub fuzz: f64,
 }
 
 impl Reflect for Metal {
@@ -51,7 +52,7 @@ impl Reflect for Metal {
         let reflected = ray.direction.normalize().reflect(&hit.normal);
         let scattered = Ray {
             origin: hit.point,
-            direction: reflected,
+            direction: reflected + self.fuzz * Vector::random_unit_vector(),
         };
         Some(Reflection {
             attenuation: self.albedo,

@@ -1,34 +1,29 @@
+use std::io::Cursor;
 use crate::color::Color;
 use crate::data::Size;
 use crate::material::Reflect;
-use crate::object::{Hit, Object, Sphere};
+use crate::object::{Hit, Object};
 use crate::ray::Ray;
 use crate::vector::{Point, Vector};
 use crate::world::create_world;
 use crate::RenderSettings;
 use eframe::egui;
-use image::{ImageOutputFormat, RgbImage};
 use log::info;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use single_value_channel::Updater;
-use std::io::Cursor;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
+use image::{ImageOutputFormat, RgbImage};
 
 pub fn render(
     settings: RenderSettings,
     sender: Updater<f32>,
     context: &mut egui::Context,
 ) -> Vec<u8> {
-    let mut image = Arc::new(Mutex::new(RgbImage::new(
+    let image = Arc::new(Mutex::new(RgbImage::new(
         settings.size.width,
         settings.size.height,
     )));
-    const Y_UP: Vector = Vector {
-        x: 0.0,
-        y: 1.0,
-        z: 0.0,
-    };
 
     let viewport_size = Size {
         height: 2.0,
@@ -47,9 +42,9 @@ pub fn render(
         - viewport_v / 2.0;
     let origin_pixel = viewport_origin + (pixel_delta_u + pixel_delta_v) / 2.0;
 
-    let world = create_world();
+    let world = create_world(&settings.scene);
 
-    let mut completed_pixels = AtomicU32::new(0);
+    let completed_pixels = AtomicU32::new(0);
     (0..settings.size.width).into_par_iter().for_each(|x| {
         for y in 0..settings.size.height {
             let pixel_center =

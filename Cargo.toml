@@ -16,5 +16,6 @@ rand = "0.8.5"
 rayon = "1.8.1"
 serde = { version = "1.0.130", features = ["derive"] }
 single_value_channel = "1.2.2"
+strum_macros = "0.26.1"
 toml = "0.8.10"
 uuid = { version = "1.7.0", features = ["v4"] }

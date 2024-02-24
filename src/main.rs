@@ -23,6 +23,7 @@ use uuid::Uuid;
 
 use crate::renderer::render;
 use crate::vector::Point;
+use crate::world::Scene;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -115,7 +116,11 @@ impl eframe::App for RaytracerApp {
 
         egui::Window::new("Render settings").show(ctx, |ui| {
             if ui.button("Reset").clicked() {
-                self.render_settings = RenderSettings::default();
+                let scene = self.render_settings.scene.clone();
+                self.render_settings = RenderSettings {
+                    scene,
+                    ..Default::default()
+                }
             }
 
             egui::Grid::new("render_settings")
@@ -123,6 +128,17 @@ impl eframe::App for RaytracerApp {
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
+                    ui.label("Scene");
+                    egui::ComboBox::from_label("")
+                        .selected_text(self.render_settings.scene.to_string())
+                        .show_ui(ui, |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(60.0);
+                            ui.selectable_value(&mut self.render_settings.scene, Scene::Scene1, Scene::Scene1.to_string());
+                            ui.selectable_value(&mut self.render_settings.scene, Scene::Scene2, Scene::Scene2.to_string());
+                        });
+                    ui.end_row();
+
                     ui.label("Height");
                     ui.add(egui::DragValue::new(&mut self.render_settings.size.height).speed(1.0));
                     ui.end_row();
@@ -207,6 +223,7 @@ struct RenderSettings {
     max_depth: u32,
     camera_position: Point,
     focal_length: f32,
+    scene: Scene,
 }
 
 impl Default for RenderSettings {
@@ -224,6 +241,7 @@ impl Default for RenderSettings {
                 z: 0.0,
             },
             focal_length: 1.0,
+            scene: Scene::Scene1,
         }
     }
 }
