@@ -1,25 +1,28 @@
+use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::ops::Range;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Vector {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 pub type Point = Vector;
-pub const ZERO: Vector = Vector {
-    x: 0.0,
-    y: 0.0,
-    z: 0.0,
-};
 
 impl Vector {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub const ZERO: Vector = Vector {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
 
-    pub fn dot(&self, other: &Self) -> f32 {
+    pub fn dot(&self, other: &Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
@@ -31,11 +34,11 @@ impl Vector {
         }
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
 
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
@@ -45,6 +48,48 @@ impl Vector {
             x: self.x / length,
             y: self.y / length,
             z: self.z / length,
+        }
+    }
+
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen(),
+            y: rng.gen(),
+            z: rng.gen(),
+        }
+    }
+
+    pub fn random_with_range(range: Range<f64>) -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen_range(range.clone()),
+            y: rng.gen_range(range.clone()),
+            z: rng.gen_range(range),
+        }
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        // TODO: Rejection sampling is slow, use a better method
+        // also I don't really understand this
+        loop {
+            let p = Self::random_with_range(-1.0..1.0);
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Self::random_in_unit_sphere().normalize()
+    }
+
+    pub fn random_in_hemisphere(normal: &Vector) -> Self {
+        let in_unit_sphere = Self::random_unit_vector();
+        if in_unit_sphere.dot(normal) > 0.0 {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
         }
     }
 }
@@ -73,10 +118,10 @@ impl std::ops::Sub for Vector {
     }
 }
 
-impl std::ops::Mul<f32> for Vector {
+impl std::ops::Mul<f64> for Vector {
     type Output = Self;
 
-    fn mul(self, rhs: f32) -> Self {
+    fn mul(self, rhs: f64) -> Self {
         Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -85,7 +130,7 @@ impl std::ops::Mul<f32> for Vector {
     }
 }
 
-impl std::ops::Mul<Vector> for f32 {
+impl std::ops::Mul<Vector> for f64 {
     type Output = Vector;
 
     fn mul(self, rhs: Vector) -> Vector {
@@ -93,10 +138,10 @@ impl std::ops::Mul<Vector> for f32 {
     }
 }
 
-impl std::ops::Div<f32> for Vector {
+impl std::ops::Div<f64> for Vector {
     type Output = Self;
 
-    fn div(self, rhs: f32) -> Self {
+    fn div(self, rhs: f64) -> Self {
         Self {
             x: self.x / rhs,
             y: self.y / rhs,

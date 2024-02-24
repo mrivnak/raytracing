@@ -1,13 +1,19 @@
 use crate::vector::Vector;
 
 pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 impl Color {
-    pub fn new(r: f32, g: f32, b: f32) -> Self {
+    pub const BLACK: Color = Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+    };
+
+    pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { r, g, b }
     }
 }
@@ -27,7 +33,7 @@ impl From<Vec<Color>> for Color {
         let mut r = 0.0;
         let mut g = 0.0;
         let mut b = 0.0;
-        let samples = colors.len() as f32;
+        let samples = colors.len() as f64;
 
         // Sample average
         for color in colors {
@@ -70,10 +76,10 @@ impl std::ops::Add for Color {
     }
 }
 
-impl std::ops::Mul<f32> for Color {
+impl std::ops::Mul<f64> for Color {
     type Output = Self;
 
-    fn mul(self, rhs: f32) -> Self {
+    fn mul(self, rhs: f64) -> Self {
         Self {
             r: self.r * rhs,
             g: self.g * rhs,
@@ -82,7 +88,7 @@ impl std::ops::Mul<f32> for Color {
     }
 }
 
-impl std::ops::Mul<Color> for f32 {
+impl std::ops::Mul<Color> for f64 {
     type Output = Color;
 
     fn mul(self, rhs: Color) -> Color {

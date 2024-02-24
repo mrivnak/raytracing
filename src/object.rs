@@ -12,7 +12,7 @@ pub enum Facing {
 pub struct HitRecord {
     pub point: Point,
     pub normal: Point,
-    pub t: f32,
+    pub t: f64,
     pub facing: Facing,
 }
 
@@ -31,16 +31,16 @@ pub enum Object {
 
 #[enum_dispatch(Object)]
 pub trait Hit {
-    fn hit(&self, ray: &Ray, t: Range<f32>) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord>;
 }
 
 pub struct Sphere {
     pub center: Point,
-    pub radius: f32,
+    pub radius: f64,
 }
 
 impl Hit for Sphere {
-    fn hit(&self, ray: &Ray, t: Range<f32>) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = oc.dot(&ray.direction);
@@ -80,7 +80,7 @@ pub struct Collection {
 }
 
 impl Hit for Collection {
-    fn hit(&self, ray: &Ray, t: Range<f32>) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord> {
         let mut closest = t.end;
         let mut record = None;
 

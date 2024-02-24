@@ -1,5 +1,6 @@
 mod color;
 mod data;
+mod material;
 mod object;
 mod ray;
 mod renderer;
@@ -55,7 +56,7 @@ struct RaytracerApp {
 
 impl RaytracerApp {
     fn with_settings(settings: RenderSettings) -> Self {
-        let (receiver, updater) = single_value_channel::channel_starting_with(0.0_f32);
+        let (receiver, updater) = single_value_channel::channel_starting_with(0.0);
         Self {
             image: vec![],
             image_id: Uuid::new_v4(),
@@ -71,7 +72,7 @@ impl RaytracerApp {
 impl Default for RaytracerApp {
     fn default() -> Self {
         let image = vec![];
-        let (receiver, updater) = single_value_channel::channel_starting_with(0.0_f32);
+        let (receiver, updater) = single_value_channel::channel_starting_with(0.0);
         Self {
             image,
             image_id: Uuid::new_v4(),
@@ -132,6 +133,14 @@ impl eframe::App for RaytracerApp {
 
                     ui.label("Samples");
                     ui.add(egui::DragValue::new(&mut self.render_settings.samples).speed(1.0));
+                    ui.end_row();
+
+                    ui.label("Max Depth");
+                    ui.add(
+                        egui::DragValue::new(&mut self.render_settings.max_depth)
+                            .clamp_range(0..=2048)
+                            .speed(1.0),
+                    );
                     ui.end_row();
 
                     ui.label("Camera Position");
@@ -195,6 +204,7 @@ impl eframe::App for RaytracerApp {
 struct RenderSettings {
     size: Size<u32>,
     samples: u32,
+    max_depth: u32,
     camera_position: Point,
     focal_length: f32,
 }
@@ -207,6 +217,7 @@ impl Default for RenderSettings {
                 height: 1080,
             },
             samples: 100,
+            max_depth: 50,
             camera_position: Point {
                 x: 0.0,
                 y: 0.0,
