@@ -7,9 +7,13 @@ edition = "2021"
 dirs = "5.0.1"
 eframe = { version = "0.26.2", default-features = false, features = ["default_fonts", "wgpu", "wayland", "x11"] }
 egui_extras = { version = "0.26.2", features = ["image"]}
+enum_dispatch = "0.3.12"
 env_logger = "0.11.2"
+humanize-duration = "0.0.6"
 image = { version = "0.24.8", features = ["png"] }
 log = "0.4.20"
+rand = "0.8.5"
+rayon = "1.8.1"
 serde = { version = "1.0.130", features = ["derive"] }
 single_value_channel = "1.2.2"
 toml = "0.8.10"
