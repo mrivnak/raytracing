@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::data::Size;
+use crate::material::Reflect;
 use crate::object::{Hit, Object, Sphere};
 use crate::ray::Ray;
 use crate::vector::{Point, Vector};
@@ -111,12 +112,14 @@ fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {
         return Color::BLACK;
     }
 
-    if let Some(rec) = obj.hit(ray, 0.001..f64::INFINITY) {
-        let direction = Vector::random_in_hemisphere(&rec.normal);
-        return 0.5 * ray_color(&Ray::new(rec.point, direction), obj, depth - 1);
+    if let Some(hit) = obj.hit(ray, 0.001..f64::INFINITY) {
+        if let Some(reflection) = hit.material.reflect(ray, &hit) {
+            return reflection.attenuation * ray_color(&reflection.ray, obj, depth - 1);
+        }
+        return Color::BLACK;
     }
 
     let unit_direction = ray.direction.normalize();
-    let t = 0.5 * (unit_direction.y + 1.0);
-    Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+    let a = 0.5 * (unit_direction.y + 1.0);
+    Color::new(1.0, 1.0, 1.0) * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
 }

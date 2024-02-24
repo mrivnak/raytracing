@@ -1,3 +1,4 @@
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vector::{Point, Vector};
 use enum_dispatch::enum_dispatch;
@@ -9,11 +10,12 @@ pub enum Facing {
     Outward,
 }
 
-pub struct HitRecord {
+pub struct Collision<'a> {
     pub point: Point,
     pub normal: Point,
     pub t: f64,
     pub facing: Facing,
+    pub material: &'a Material,
 }
 
 pub fn set_facing(ray: &Ray, normal: Vector) -> (Vector, Facing) {
@@ -31,16 +33,17 @@ pub enum Object {
 
 #[enum_dispatch(Object)]
 pub trait Hit {
-    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<Collision>;
 }
 
 pub struct Sphere {
     pub center: Point,
     pub radius: f64,
+    pub material: Material,
 }
 
 impl Hit for Sphere {
-    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<Collision> {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = oc.dot(&ray.direction);
@@ -66,11 +69,12 @@ impl Hit for Sphere {
         let normal = (point - self.center) / self.radius;
         let (normal, facing) = set_facing(ray, normal);
 
-        Some(HitRecord {
+        Some(Collision {
             point,
             normal,
             t,
             facing,
+            material: &self.material,
         })
     }
 }
@@ -80,7 +84,7 @@ pub struct Collection {
 }
 
 impl Hit for Collection {
-    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<Collision> {
         let mut closest = t.end;
         let mut record = None;
 

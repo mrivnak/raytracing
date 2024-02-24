@@ -92,6 +92,15 @@ impl Vector {
             -in_unit_sphere
         }
     }
+
+    pub fn reflect(self, normal: &Vector) -> Self {
+        self - (2.0 * self.dot(normal) * *normal)
+    }
+
+    pub fn is_near_zero(&self) -> bool {
+        const S: f64 = 1e-8;
+        self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
+    }
 }
 
 impl std::ops::Add for Vector {

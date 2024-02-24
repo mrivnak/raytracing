@@ -1,5 +1,14 @@
 use crate::vector::Vector;
 
+trait GammaCorrect {
+    fn gamma_correct(self) -> Self;
+}
+
+trait Clamp {
+    fn clamp(self, min: f64, max: f64) -> Self;
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Color {
     pub r: f64,
     pub g: f64,
@@ -45,12 +54,27 @@ impl From<Vec<Color>> for Color {
         g /= samples;
         b /= samples;
 
-        // Clamp
-        r = r.clamp(0.0, 1.0);
-        g = g.clamp(0.0, 1.0);
-        b = b.clamp(0.0, 1.0);
+        Color { r, g, b }.gamma_correct().clamp(0.0, 1.0)
+    }
+}
 
-        Color { r, g, b }
+impl GammaCorrect for Color {
+    fn gamma_correct(self) -> Self {
+        Self {
+            r: self.r.sqrt(),
+            g: self.g.sqrt(),
+            b: self.b.sqrt(),
+        }
+    }
+}
+
+impl Clamp for Color {
+    fn clamp(self, min: f64, max: f64) -> Self {
+        Self {
+            r: self.r.clamp(min, max),
+            g: self.g.clamp(min, max),
+            b: self.b.clamp(min, max),
+        }
     }
 }
 
@@ -72,6 +96,18 @@ impl std::ops::Add for Color {
             r: self.r + rhs.r,
             g: self.g + rhs.g,
             b: self.b + rhs.b,
+        }
+    }
+}
+
+impl std::ops::Mul for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        Self {
+            r: self.r * rhs.r,
+            g: self.g * rhs.g,
+            b: self.b * rhs.b,
         }
     }
 }
