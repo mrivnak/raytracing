@@ -111,7 +111,7 @@ fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {
         return Color::BLACK;
     }
 
-    if let Some(rec) = obj.hit(ray, 0.0..f64::INFINITY) {
+    if let Some(rec) = obj.hit(ray, 0.001..f64::INFINITY) {
         let direction = Vector::random_in_hemisphere(&rec.normal);
         return 0.5 * ray_color(&Ray::new(rec.point, direction), obj, depth - 1);
     }
