@@ -1,19 +1,19 @@
-use std::io::Cursor;
 use crate::color::Color;
 use crate::data::Size;
-use crate::material::Reflect;
+use crate::material::Deflect;
 use crate::object::{Hit, Object};
 use crate::ray::Ray;
 use crate::vector::{Point, Vector};
 use crate::world::create_world;
 use crate::RenderSettings;
 use eframe::egui;
+use image::{ImageOutputFormat, RgbImage};
 use log::info;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use single_value_channel::Updater;
+use std::io::Cursor;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
-use image::{ImageOutputFormat, RgbImage};
 
 pub fn render(
     settings: RenderSettings,
@@ -51,7 +51,6 @@ pub fn render(
                 origin_pixel + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
 
             let samples = (0..settings.samples)
-                .into_iter()
                 .map(|_| {
                     let ray = get_ray(
                         pixel_center,
@@ -99,7 +98,7 @@ fn get_ray(pixel_center: Point, camera_position: Point, pixel_du: Vector, pixel_
 fn pixel_sample_square(du: Vector, dv: Vector) -> Vector {
     let px = -0.5 + rand::random::<f64>();
     let py = -0.5 + rand::random::<f64>();
-    return px * du + py * dv;
+    px * du + py * dv
 }
 
 fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {
@@ -108,7 +107,7 @@ fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {
     }
 
     if let Some(hit) = obj.hit(ray, 0.001..f64::INFINITY) {
-        if let Some(reflection) = hit.material.reflect(ray, &hit) {
+        if let Some(reflection) = hit.material.deflect(ray, &hit) {
             return reflection.attenuation * ray_color(&reflection.ray, obj, depth - 1);
         }
         return Color::BLACK;

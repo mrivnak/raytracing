@@ -11,12 +11,11 @@ use crate::data::Size;
 use eframe::egui;
 use humanize_duration::prelude::DurationExt;
 use humanize_duration::Truncate;
-use image::{ImageOutputFormat, RgbImage};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use single_value_channel::{Receiver, Updater};
 use std::error::Error;
-use std::io::{Cursor, ErrorKind, Read, Write};
+use std::io::{ErrorKind, Read, Write};
 use std::thread::JoinHandle;
 use std::time::Duration;
 use uuid::Uuid;
@@ -134,8 +133,32 @@ impl eframe::App for RaytracerApp {
                         .show_ui(ui, |ui| {
                             ui.style_mut().wrap = Some(false);
                             ui.set_min_width(60.0);
-                            ui.selectable_value(&mut self.render_settings.scene, Scene::Scene1, Scene::Scene1.to_string());
-                            ui.selectable_value(&mut self.render_settings.scene, Scene::Scene2, Scene::Scene2.to_string());
+                            // TODO: there's probably a way to use a macro for this
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene1,
+                                Scene::Scene1.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene2,
+                                Scene::Scene2.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene3,
+                                Scene::Scene3.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene4,
+                                Scene::Scene4.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene5,
+                                Scene::Scene5.to_string(),
+                            );
                         });
                     ui.end_row();
 
