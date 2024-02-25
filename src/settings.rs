@@ -14,6 +14,8 @@ pub struct RenderSettings {
     pub camera_position: Point,
     pub focus_point: Point,
     pub field_of_view: f32,
+    pub defocus_angle: f32,
+    pub focus_distance: f32,
     pub scene: Scene,
 }
 
@@ -37,6 +39,8 @@ impl Default for RenderSettings {
                 z: -1.0,
             },
             field_of_view: 90.0,
+            defocus_angle: 0.0,
+            focus_distance: 10.0,
             scene: Scene::Scene1,
         }
     }

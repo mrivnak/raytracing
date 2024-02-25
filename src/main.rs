@@ -231,6 +231,14 @@ impl eframe::App for RaytracerApp {
                     ui.label("Field of View");
                     ui.add(egui::DragValue::new(&mut self.render_settings.field_of_view).speed(0.1));
                     ui.end_row();
+
+                    ui.label("Defocus Angle");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.defocus_angle).speed(0.1));
+                    ui.end_row();
+
+                    ui.label("Focus Distance");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.focus_distance).speed(0.1));
+                    ui.end_row();
                 });
 
             if self.render_handle.is_none() {

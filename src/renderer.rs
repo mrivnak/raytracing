@@ -59,6 +59,10 @@ pub fn render(
         - viewport_v / 2.0;
     let origin_pixel = viewport_origin + (pixel_delta_u + pixel_delta_v) / 2.0;
 
+    let defocus_radius = settings.focus_distance as f64 * (settings.defocus_angle as f64 / 2.0).to_radians().tan();
+    let defocus_u = u * defocus_radius;
+    let defocus_v = v * defocus_radius;
+
     let world = create_world(&settings.scene);
 
     let completed_pixels = AtomicU32::new(0);
@@ -74,6 +78,9 @@ pub fn render(
                         settings.camera_position,
                         pixel_delta_u,
                         pixel_delta_v,
+                        settings.defocus_angle,
+                        defocus_u,
+                        defocus_v,
                     );
                     ray_color(&ray, &world, settings.max_depth)
                 })
@@ -106,16 +113,27 @@ pub fn render(
     }
 }
 
-fn get_ray(pixel_center: Point, camera_position: Point, pixel_du: Vector, pixel_dv: Vector) -> Ray {
+fn get_ray(pixel_center: Point, camera_position: Point, pixel_du: Vector, pixel_dv: Vector, defocus_angle: f32, defocus_u: Vector, defocus_v: Vector) -> Ray {
     let pixel_sample = pixel_center + pixel_sample_square(pixel_du, pixel_dv);
-    let ray_direction = pixel_sample - camera_position;
-    Ray::new(camera_position, ray_direction)
+
+    let ray_origin = if defocus_angle > 0.0 {
+        defocus_disk_sample(camera_position, defocus_u, defocus_v)
+    } else {
+        camera_position
+    };
+    let ray_direction = pixel_sample - ray_origin;
+    Ray::new(ray_origin, ray_direction)
 }
 
 fn pixel_sample_square(du: Vector, dv: Vector) -> Vector {
     let px = -0.5 + rand::random::<f64>();
     let py = -0.5 + rand::random::<f64>();
     px * du + py * dv
+}
+
+fn defocus_disk_sample(camera_position: Point, defocus_u: Vector, defocus_v: Vector) -> Point {
+    let p = Vector::random_in_unit_disk();
+    return camera_position + (p.x * defocus_u) + (p.y * defocus_v);
 }
 
 fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {

@@ -93,6 +93,20 @@ impl Vector {
         }
     }
 
+    pub fn random_in_unit_disk() -> Self {
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Self {
+                x: rng.gen_range(-1.0..1.0),
+                y: rng.gen_range(-1.0..1.0),
+                z: 0.0,
+            };
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
     pub fn reflect(self, normal: &Vector) -> Self {
         self - (2.0 * self.dot(normal) * *normal)
     }
