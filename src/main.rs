@@ -165,6 +165,11 @@ impl eframe::App for RaytracerApp {
                                 Scene::Scene6,
                                 Scene::Scene6.to_string(),
                             );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene7,
+                                Scene::Scene7.to_string(),
+                            );
                         });
                     ui.end_row();
 

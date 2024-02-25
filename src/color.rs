@@ -1,3 +1,5 @@
+use std::ops::Range;
+use rand::Rng;
 use crate::vector::Vector;
 
 trait GammaCorrect {
@@ -29,6 +31,24 @@ impl Color {
 
     pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { r, g, b }
+    }
+
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            r: rng.gen(),
+            g: rng.gen(),
+            b: rng.gen(),
+        }
+    }
+
+    pub fn random_with_range(range: Range<f64>) -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            r: rng.gen_range(range.clone()),
+            g: rng.gen_range(range.clone()),
+            b: rng.gen_range(range),
+        }
     }
 }
 

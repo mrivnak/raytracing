@@ -71,7 +71,8 @@ impl Vector {
 
     pub fn random_in_unit_sphere() -> Self {
         // TODO: Rejection sampling is slow, use a better method
-        // also I don't really understand this
+        // should be better to generate a random angle and figure out where it lands on the sphere
+        // since this vector is currently always normalized afterward, that would remove the necessity for that step
         loop {
             let p = Self::random_with_range(-1.0..1.0);
             if p.length_squared() < 1.0 {
@@ -94,6 +95,7 @@ impl Vector {
     }
 
     pub fn random_in_unit_disk() -> Self {
+        // TODO: same as for random_in_unit_sphere
         let mut rng = rand::thread_rng();
         loop {
             let p = Self {
