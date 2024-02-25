@@ -16,6 +16,8 @@ pub enum Scene {
     Scene4,
     #[strum(to_string = "Hollow Glass Sphere")]
     Scene5,
+    #[strum(to_string = "Red and Blue")]
+    Scene6,
 }
 
 pub fn create_world(scene: &Scene) -> Object {
@@ -25,6 +27,7 @@ pub fn create_world(scene: &Scene) -> Object {
         Scene::Scene3 => create_scene3(),
         Scene::Scene4 => create_scene4(),
         Scene::Scene5 => create_scene5(),
+        Scene::Scene6 => create_scene6(),
     }
 }
 
@@ -213,6 +216,32 @@ fn create_scene5() -> Object {
             Object::Sphere(Sphere {
                 center: Point::new(1.0, 0.0, -1.0),
                 radius: 0.5,
+                material: material_right,
+            }),
+        ],
+    })
+}
+
+fn create_scene6() -> Object {
+    let material_left = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.0, 0.0, 1.0),
+    });
+    let material_right = Material::Lambertian(Lambertian {
+        albedo: Color::new(1.0, 0.0, 0.0),
+    });
+
+    let r = (std::f64::consts::PI / 4.0).cos();
+
+    Object::Collection(Collection {
+        objects: vec![
+            Object::Sphere(Sphere {
+                center: Point::new(-r, 0.0, -1.0),
+                radius: r,
+                material: material_left,
+            }),
+            Object::Sphere(Sphere {
+                center: Point::new(r, 0.0, -1.0),
+                radius: r,
                 material: material_right,
             }),
         ],

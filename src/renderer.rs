@@ -15,6 +15,12 @@ use std::io::Cursor;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
 
+const V_UP: Vector = Vector {
+    x: 0.0,
+    y: 1.0,
+    z: 0.0,
+};
+
 pub fn render(
     settings: RenderSettings,
     sender: Updater<f32>,
@@ -25,19 +31,30 @@ pub fn render(
         settings.size.height,
     )));
 
-    let viewport_size = Size {
-        height: 2.0,
-        width: 2.0 * settings.size.width as f64 / settings.size.height as f64,
+    let focal_length = (settings.camera_position - settings.focus_point).length();
+    let theta = settings.field_of_view.to_radians();
+    let h = (theta / 2.0).tan();
+    let viewport_size = {
+        let height = 2.0 * h as f64 * focal_length;
+        Size {
+            height,
+            width: height * settings.size.width as f64 / settings.size.height as f64,
+        }
     };
 
-    let viewport_u = Vector::new(viewport_size.width, 0.0, 0.0);
-    let viewport_v = Vector::new(0.0, -viewport_size.height, 0.0);
+    let w = (settings.camera_position - settings.focus_point).normalize();
+    let u = V_UP.cross(&w).normalize();
+    let v = w.cross(&u);
+
+    let viewport_u = u * viewport_size.width;
+    let viewport_v = -v * viewport_size.height;
+
 
     let pixel_delta_u = viewport_u / settings.size.width as f64;
     let pixel_delta_v = viewport_v / settings.size.height as f64;
 
     let viewport_origin = settings.camera_position
-        - Vector::new(0.0, 0.0, settings.focal_length as f64)
+        - focal_length * w
         - viewport_u / 2.0
         - viewport_v / 2.0;
     let origin_pixel = viewport_origin + (pixel_delta_u + pixel_delta_v) / 2.0;
