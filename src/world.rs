@@ -272,7 +272,7 @@ fn create_scene7() -> Object {
                 b as f64 + 0.9 * rand::random::<f64>(),
             );
             if (center - Point::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
+                if choose_mat < 0.65 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::Lambertian(Lambertian { albedo });
@@ -281,7 +281,7 @@ fn create_scene7() -> Object {
                         radius: 0.2,
                         material: sphere_material,
                     }));
-                } else if choose_mat < 0.95 {
+                } else if choose_mat < 0.80 {
                     // metal
                     let albedo = Color::random_with_range(0.5..1.0);
                     let fuzz = rand::random::<f64>() * 0.5;

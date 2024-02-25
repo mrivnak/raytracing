@@ -1,3 +1,5 @@
+#![feature(more_float_constants)]
+
 mod color;
 mod data;
 mod material;
@@ -173,12 +175,12 @@ impl eframe::App for RaytracerApp {
                         });
                     ui.end_row();
 
-                    ui.label("Height");
-                    ui.add(egui::DragValue::new(&mut self.render_settings.size.height).speed(1.0));
-                    ui.end_row();
-
                     ui.label("Width");
                     ui.add(egui::DragValue::new(&mut self.render_settings.size.width).speed(1.0));
+                    ui.end_row();
+
+                    ui.label("Height");
+                    ui.add(egui::DragValue::new(&mut self.render_settings.size.height).speed(1.0));
                     ui.end_row();
 
                     ui.label("Samples");

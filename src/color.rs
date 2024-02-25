@@ -33,13 +33,37 @@ impl Color {
         Self { r, g, b }
     }
 
+    fn hsv_to_rgb(h: f64, s: f64, v: f64) -> Self {
+        let h = h * 6.0;
+        let i = h.floor() as i32;
+        let f = h - i as f64;
+        let p = v * (1.0 - s);
+        let q = v * (1.0 - s * f);
+        let t = v * (1.0 - s * (1.0 - f));
+
+        match i {
+            0 => Self::new(v, t, p),
+            1 => Self::new(q, v, p),
+            2 => Self::new(p, v, t),
+            3 => Self::new(p, q, v),
+            4 => Self::new(t, p, v),
+            _ => Self::new(v, p, q),
+        }
+    }
+
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
-        Self {
-            r: rng.gen(),
-            g: rng.gen(),
-            b: rng.gen(),
-        }
+
+        const INV_PHI: f64 = 1.0 / std::f64::consts::PHI;
+        const SATURATION: f64 = 0.75;
+        const VALUE: f64 = 0.95;
+
+        // generate hsv
+        let h = rng.gen::<f64>();
+        let h = h + INV_PHI;
+        let h = h % 1.0;
+
+        Self::hsv_to_rgb(h, SATURATION, VALUE)
     }
 
     pub fn random_with_range(range: Range<f64>) -> Self {
