@@ -14,6 +14,8 @@ pub struct Collision<'a> {
     pub point: Point,
     pub normal: Point,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub facing: Facing,
     pub material: &'a Material,
 }
@@ -42,6 +44,17 @@ pub struct Sphere {
     pub material: Material,
 }
 
+impl Sphere {
+    fn uv(&self, point: &Point) -> (f64, f64) {
+        let p = (*point - self.center) / self.radius;
+        let phi = p.z.atan2(p.x);
+        let theta = p.y.asin();
+        let u = 1.0 - (phi + std::f64::consts::PI) / (2.0 * std::f64::consts::PI);
+        let v = (theta + std::f64::consts::PI / 2.0) / std::f64::consts::PI;
+        (u, v)
+    }
+}
+
 impl Hit for Sphere {
     fn hit(&self, ray: &Ray, t: Range<f64>) -> Option<Collision> {
         let oc = ray.origin - self.center;
@@ -68,11 +81,14 @@ impl Hit for Sphere {
         let point = ray.at(t);
         let normal = (point - self.center) / self.radius;
         let (normal, facing) = set_facing(ray, normal);
+        let (u, v) = self.uv(&point);
 
         Some(Collision {
             point,
             normal,
             t,
+            u,
+            v,
             facing,
             material: &self.material,
         })

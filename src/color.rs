@@ -28,6 +28,11 @@ impl Color {
         g: 1.0,
         b: 1.0,
     };
+    pub const MAGENTA: Color = Color {
+        r: 1.0,
+        g: 0.0,
+        b: 1.0,
+    };
 
     pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { r, g, b }
@@ -83,6 +88,28 @@ impl From<Color> for [u8; 3] {
             (color.g * 254.999) as u8,
             (color.b * 254.999) as u8,
         ]
+    }
+}
+
+impl From<[u8; 3]> for Color {
+    fn from(slice: [u8; 3]) -> Color {
+        Color {
+            r: slice[0] as f64 / 255.0,
+            g: slice[1] as f64 / 255.0,
+            b: slice[2] as f64 / 255.0,
+        }
+    }
+
+}
+
+impl From<&[u8]> for Color {
+    fn from(slice: &[u8]) -> Color {
+        debug_assert_eq!(slice.len(), 3, "Slice must be of length 3");
+        Color {
+            r: slice[0] as f64 / 255.0,
+            g: slice[1] as f64 / 255.0,
+            b: slice[2] as f64 / 255.0,
+        }
     }
 }
 
@@ -178,5 +205,29 @@ impl std::ops::Mul<Color> for f64 {
 
     fn mul(self, rhs: Color) -> Color {
         rhs * self
+    }
+}
+
+impl std::ops::Div<Color> for f64 {
+    type Output = Color;
+
+    fn div(self, rhs: Color) -> Color {
+        Color {
+            r: self / rhs.r,
+            g: self / rhs.g,
+            b: self / rhs.b,
+        }
+    }
+}
+
+impl std::ops::Div<f64> for Color {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self {
+        Self {
+            r: self.r / rhs,
+            g: self.g / rhs,
+            b: self.b / rhs,
+        }
     }
 }

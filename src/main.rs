@@ -9,6 +9,8 @@ mod renderer;
 mod vector;
 mod world;
 mod settings;
+mod texture;
+mod perlin;
 
 
 use eframe::egui;
@@ -28,6 +30,8 @@ use crate::settings::{load_settings, save_settings, RenderSettings};
 use crate::world::Scene;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // TODO: add a way to run from CLI for benchmarking
+
     env_logger::init();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([1920.0, 1080.0]),
@@ -171,6 +175,16 @@ impl eframe::App for RaytracerApp {
                                 &mut self.render_settings.scene,
                                 Scene::Scene7,
                                 Scene::Scene7.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene8,
+                                Scene::Scene8.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene9,
+                                Scene::Scene9.to_string(),
                             );
                         });
                     ui.end_row();

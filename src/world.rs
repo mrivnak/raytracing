@@ -1,8 +1,9 @@
 use crate::color::Color;
-use crate::material::{Dielectric, Lambertian, Material, Metal};
+use crate::material::{Dielectric, Lambertian, Material, Metal, Simple};
 use crate::object::{Collection, Object, Sphere};
 use crate::vector::Point;
 use serde::{Deserialize, Serialize};
+use crate::texture::{Image, Noise, Texture};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, strum_macros::Display)]
 pub enum Scene {
@@ -20,6 +21,10 @@ pub enum Scene {
     Scene6,
     #[strum(to_string = "Many Spheres")]
     Scene7,
+    #[strum(to_string = "Earth")]
+    Scene8,
+    #[strum(to_string = "Two Perlin Spheres")]
+    Scene9,
 }
 
 pub fn create_world(scene: &Scene) -> Object {
@@ -31,6 +36,8 @@ pub fn create_world(scene: &Scene) -> Object {
         Scene::Scene5 => create_scene5(),
         Scene::Scene6 => create_scene6(),
         Scene::Scene7 => create_scene7(),
+        Scene::Scene8 => create_scene8(),
+        Scene::Scene9 => create_scene9(),
     }
 }
 
@@ -336,5 +343,40 @@ fn create_scene7() -> Object {
 
     Object::Collection(Collection {
         objects
+    })
+}
+
+fn create_scene8() -> Object {
+    let earth_texture = Texture::Image(Image::load("res/earth.jpg".into()).unwrap_or_default());
+    let earth_material = Material::Simple(Simple {
+        texture: earth_texture,
+    });
+
+    Object::Sphere(Sphere {
+        center: Point::new(0.0, 0.0, -12.0),
+        radius: 2.0,
+        material: earth_material,
+    })
+}
+
+fn create_scene9() -> Object {
+    let perlin_texture = Texture::Noise(Noise::new(4.0));
+    let perlin_material = Material::Simple(Simple {
+        texture: perlin_texture,
+    });
+
+    Object::Collection(Collection {
+        objects: vec![
+            Object::Sphere(Sphere {
+                center: Point::new(0.0, -1000.0, 0.0),
+                radius: 1000.0,
+                material: perlin_material.clone(),
+            }),
+            Object::Sphere(Sphere {
+                center: Point::new(0.0, 2.0, 0.0),
+                radius: 2.0,
+                material: perlin_material,
+            }),
+        ],
     })
 }

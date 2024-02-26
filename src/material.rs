@@ -3,6 +3,7 @@ use crate::object::{Collision, Facing};
 use crate::ray::Ray;
 use crate::vector::Vector;
 use enum_dispatch::enum_dispatch;
+use crate::texture::{ColorAt, Texture};
 
 pub struct Deflection {
     pub attenuation: Color,
@@ -15,6 +16,7 @@ pub enum Material {
     Lambertian,
     Metal,
     Dielectric,
+    Simple,
 }
 
 #[enum_dispatch(Material)]
@@ -107,5 +109,28 @@ impl Dielectric {
     fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
         let r0 = ((1.0 - refraction_index) / (1.0 + refraction_index)).powi(2);
         r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+    }
+}
+
+#[derive(Clone)]
+pub struct Simple {
+    pub texture: Texture,
+}
+
+impl Deflect for Simple {
+    fn deflect(&self, _ray: &Ray, hit: &Collision) -> Option<Deflection> {
+        let mut scatter_direction = hit.normal + Vector::random_unit_vector();
+        if scatter_direction.is_near_zero() {
+            scatter_direction = hit.normal;
+        }
+
+        let scattered = Ray {
+            origin: hit.point,
+            direction: scatter_direction,
+        };
+        Some(Deflection {
+            attenuation: self.texture.color_at(hit.u, hit.v, &hit.point),
+            ray: scattered,
+        })
     }
 }
