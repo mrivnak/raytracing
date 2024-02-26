@@ -182,6 +182,12 @@ impl std::ops::Div<f64> for Vector {
     }
 }
 
+impl std::ops::MulAssign<f64> for Vector {
+    fn mul_assign(&mut self, rhs: f64) {
+        *self = *self * rhs;
+    }
+}
+
 impl std::ops::Neg for Vector {
     type Output = Self;
 

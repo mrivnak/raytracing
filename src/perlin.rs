@@ -72,6 +72,22 @@ impl Perlin {
         accum
     }
 
+    pub fn turbulence(&self, point: &Point, depth: Option<usize>) -> f64 {
+        let depth = depth.unwrap_or(7);
+
+        let mut accum = 0.0;
+        let mut temp_p = *point;
+        let mut weight = 1.0;
+
+        for _ in 0..depth {
+            accum += weight * self.noise(&temp_p);
+            weight *= 0.5;
+            temp_p *= 2.0;
+        }
+
+        accum.abs()
+    }
+
     fn perlin_generate_perm() -> Vec<i32> {
         let mut p = Vec::with_capacity(Self::POINT_COUNT);
         for i in 0..Self::POINT_COUNT {

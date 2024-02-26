@@ -147,6 +147,7 @@ impl Noise {
 
 impl ColorAt for Noise {
     fn color_at(&self, _u: f64, _v: f64, point: &Point) -> Color {
-        Color::new(1.0, 1.0, 1.0) * (1.0 + self.perlin.noise(&(*point * self.scale))) / 2.0
+        let s = *point * self.scale;
+        Color::new(1.0, 1.0, 1.0) * self.perlin.turbulence(&s, None)
     }
 }
