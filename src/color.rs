@@ -1,6 +1,6 @@
-use std::ops::Range;
-use rand::Rng;
 use crate::vector::Vector;
+use rand::Rng;
+use std::ops::Range;
 
 trait GammaCorrect {
     fn gamma_correct(self) -> Self;
@@ -99,7 +99,6 @@ impl From<[u8; 3]> for Color {
             b: slice[2] as f64 / 255.0,
         }
     }
-
 }
 
 impl From<&[u8]> for Color {

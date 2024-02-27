@@ -30,6 +30,7 @@ pub fn set_facing(ray: &Ray, normal: Vector) -> (Vector, Facing) {
 #[enum_dispatch]
 pub enum Object {
     Sphere,
+    Quad,
     Collection,
 }
 
@@ -85,6 +86,78 @@ impl Hit for Sphere {
 
         Some(Collision {
             point,
+            normal,
+            t,
+            u,
+            v,
+            facing,
+            material: &self.material,
+        })
+    }
+}
+
+pub struct Quad {
+    q: Point,
+    u: Vector,
+    v: Vector,
+    normal: Vector,
+    d: f64,
+    w: Vector,
+    material: Material,
+}
+
+impl Quad {
+    pub fn new(q: Point, u: Vector, v: Vector, material: Material) -> Self {
+        let n = u.cross(&v);
+        let normal = n.normalize();
+        let d = normal.dot(&q);
+        let w = n / n.length_squared();
+        Quad {
+            q,
+            u,
+            v,
+            normal,
+            d,
+            w,
+            material,
+        }
+    }
+
+    fn uv(alpha: f64, beta: f64) -> Option<(f64, f64)> {
+        if alpha < 0.0 || 1.0 < alpha || beta < 0.0 || 1.0 < beta {
+            None
+        } else {
+            Some((alpha, beta))
+        }
+    }
+}
+
+impl Hit for Quad {
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<Collision> {
+        let denominator = self.normal.dot(&ray.direction);
+
+        if denominator.abs() < 1e-8 {
+            return None;
+        }
+
+        let t = (self.d - self.normal.dot(&ray.origin)) / denominator;
+        if !ray_t.contains(&t) {
+            return None;
+        }
+
+        let intersection = ray.at(t);
+        let planar_hit_vector = intersection - self.q;
+        let alpha = self.w.dot(&planar_hit_vector.cross(&self.v));
+        let beta = self.w.dot(&self.u.cross(&planar_hit_vector));
+
+        let Some((u, v)) = Quad::uv(alpha, beta) else {
+            return None;
+        };
+
+        let (normal, facing) = set_facing(ray, self.normal);
+
+        Some(Collision {
+            point: intersection,
             normal,
             t,
             u,

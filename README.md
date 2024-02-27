@@ -18,6 +18,8 @@ following are some key differences in the Rust implementation:
     - The `enum_dispatch` crate is used to transform dynamic dispatch into static dispatch for trait objects.
 - Owned materials and references are used instead of smart pointers. Rust's ownership model ensures that those are
   handled safely.
-  - This and the previous point provide significant performance improvements over a more literal translation to Rust.
+    - This and the previous point provide significant performance improvements over a more literal translation to Rust.
 - GUI interface with the `egui` crate for easy configuration.
 - PNG image output with the `image` crate.
+- No support for Bounding Volume Hierarchies (BVH). It would require using smart pointers, which carry a performance
+  penalty greater than the performance gain from using BVHs. It was added and subsequently removed after benchmarking.

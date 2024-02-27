@@ -1,9 +1,10 @@
 use crate::color::Color;
-use crate::material::{Dielectric, Lambertian, Material, Metal, Simple};
-use crate::object::{Collection, Object, Sphere};
-use crate::vector::Point;
-use serde::{Deserialize, Serialize};
+use crate::material::{Dielectric, Lambertian, Light, Material, Metal, Simple};
+use crate::object::{Collection, Object, Quad, Sphere};
+use crate::settings::CameraSettings;
 use crate::texture::{Image, Noise, Texture};
+use crate::vector::{Point, Vector};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, strum_macros::Display)]
 pub enum Scene {
@@ -25,9 +26,18 @@ pub enum Scene {
     Scene8,
     #[strum(to_string = "Two Perlin Spheres")]
     Scene9,
+    #[strum(to_string = "Quads")]
+    Scene10,
+    #[strum(to_string = "Simple Light")]
+    Scene11,
 }
 
-pub fn create_world(scene: &Scene) -> Object {
+pub struct World {
+    pub object: Object,
+    pub background: Color,
+}
+
+pub fn create_world(scene: &Scene) -> World {
     match scene {
         Scene::Scene1 => create_scene1(),
         Scene::Scene2 => create_scene2(),
@@ -38,11 +48,73 @@ pub fn create_world(scene: &Scene) -> Object {
         Scene::Scene7 => create_scene7(),
         Scene::Scene8 => create_scene8(),
         Scene::Scene9 => create_scene9(),
+        Scene::Scene10 => create_scene10(),
+        Scene::Scene11 => create_scene11(),
     }
 }
 
-fn create_scene1() -> Object {
-    Object::Collection(Collection {
+pub fn get_scene_camera(scene: &Scene) -> CameraSettings {
+    match scene {
+        Scene::Scene1 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene2 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene3 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene4 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene5 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene6 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 0.0),
+            focus_point: Point::new(0.0, 0.0, -1.0),
+            field_of_view: 90.0,
+        },
+        Scene::Scene7 => CameraSettings {
+            camera_position: Point::new(13.0, 2.0, 3.0),
+            focus_point: Point::new(0.0, 0.0, 0.0),
+            field_of_view: 20.0,
+        },
+        Scene::Scene8 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 12.0),
+            focus_point: Point::new(0.0, 0.0, 0.0),
+            field_of_view: 20.0,
+        },
+        Scene::Scene9 => CameraSettings {
+            camera_position: Point::new(13.0, 2.0, 3.0),
+            focus_point: Point::new(0.0, 0.0, 0.0),
+            field_of_view: 20.0,
+        },
+        Scene::Scene10 => CameraSettings {
+            camera_position: Point::new(0.0, 0.0, 9.0),
+            focus_point: Point::new(0.0, 0.0, 0.0),
+            field_of_view: 80.0,
+        },
+        Scene::Scene11 => CameraSettings {
+            camera_position: Point::new(26.0, 3.0, 6.0),
+            focus_point: Point::new(0.0, 2.0, 0.0),
+            field_of_view: 20.0,
+        },
+    }
+}
+
+fn create_scene1() -> World {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, 0.0, -1.0),
@@ -59,10 +131,12 @@ fn create_scene1() -> Object {
                 }),
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene2() -> Object {
+fn create_scene2() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -78,7 +152,7 @@ fn create_scene2() -> Object {
         fuzz: 1.0,
     });
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, -100.5, -1.0),
@@ -101,10 +175,12 @@ fn create_scene2() -> Object {
                 material: material_right,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene3() -> Object {
+fn create_scene3() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -119,7 +195,7 @@ fn create_scene3() -> Object {
         fuzz: 1.0,
     });
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, -100.5, -1.0),
@@ -142,10 +218,12 @@ fn create_scene3() -> Object {
                 material: material_right,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene4() -> Object {
+fn create_scene4() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -160,7 +238,7 @@ fn create_scene4() -> Object {
         fuzz: 0.0,
     });
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, -100.5, -1.0),
@@ -183,10 +261,12 @@ fn create_scene4() -> Object {
                 material: material_right,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene5() -> Object {
+fn create_scene5() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -201,7 +281,7 @@ fn create_scene5() -> Object {
         fuzz: 0.0,
     });
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, -100.5, -1.0),
@@ -229,10 +309,12 @@ fn create_scene5() -> Object {
                 material: material_right,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene6() -> Object {
+fn create_scene6() -> World {
     let material_left = Material::Lambertian(Lambertian {
         albedo: Color::new(0.0, 0.0, 1.0),
     });
@@ -242,7 +324,7 @@ fn create_scene6() -> Object {
 
     let r = (std::f64::consts::PI / 4.0).cos();
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(-r, 0.0, -1.0),
@@ -255,10 +337,12 @@ fn create_scene6() -> Object {
                 material: material_right,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene7() -> Object {
+fn create_scene7() -> World {
     let mut objects = vec![];
 
     let ground_material = Material::Lambertian(Lambertian {
@@ -341,31 +425,33 @@ fn create_scene7() -> Object {
         material: material_3,
     }));
 
-    Object::Collection(Collection {
-        objects
-    })
+    let object = Object::Collection(Collection { objects });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene8() -> Object {
+fn create_scene8() -> World {
     let earth_texture = Texture::Image(Image::load("res/earth.jpg".into()).unwrap_or_default());
     let earth_material = Material::Simple(Simple {
         texture: earth_texture,
     });
 
-    Object::Sphere(Sphere {
+    let object = Object::Sphere(Sphere {
         center: Point::new(0.0, 0.0, -12.0),
         radius: 2.0,
         material: earth_material,
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
 }
 
-fn create_scene9() -> Object {
+fn create_scene9() -> World {
     let perlin_texture = Texture::Noise(Noise::new(4.0));
     let perlin_material = Material::Simple(Simple {
         texture: perlin_texture,
     });
 
-    Object::Collection(Collection {
+    let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
                 center: Point::new(0.0, -1000.0, 0.0),
@@ -378,5 +464,168 @@ fn create_scene9() -> Object {
                 material: perlin_material,
             }),
         ],
-    })
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
+}
+
+fn create_scene10() -> World {
+    let left_red = Material::Lambertian(Lambertian {
+        albedo: Color::new(1.0, 0.2, 0.2),
+    });
+    let back_green = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.2, 1.0, 0.2),
+    });
+    let right_blue = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.2, 0.2, 1.0),
+    });
+    let upper_orange = Material::Lambertian(Lambertian {
+        albedo: Color::new(1.0, 0.5, 0.0),
+    });
+    let lower_teal = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.2, 0.8, 0.8),
+    });
+
+    let object = Object::Collection(Collection {
+        objects: vec![
+            Object::Quad(Quad::new(
+                Point {
+                    x: -3.0,
+                    y: -2.0,
+                    z: 5.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -4.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 4.0,
+                    z: 0.0,
+                },
+                left_red,
+            )),
+            Object::Quad(Quad::new(
+                Point {
+                    x: -2.0,
+                    y: -2.0,
+                    z: 0.0,
+                },
+                Vector {
+                    x: 4.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 4.0,
+                    z: 0.0,
+                },
+                back_green,
+            )),
+            Object::Quad(Quad::new(
+                Point {
+                    x: 3.0,
+                    y: -2.0,
+                    z: 1.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 4.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 4.0,
+                    z: 0.0,
+                },
+                right_blue,
+            )),
+            Object::Quad(Quad::new(
+                Point {
+                    x: -2.0,
+                    y: 3.0,
+                    z: 1.0,
+                },
+                Vector {
+                    x: 4.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 4.0,
+                },
+                upper_orange,
+            )),
+            Object::Quad(Quad::new(
+                Point {
+                    x: -2.0,
+                    y: -3.0,
+                    z: 5.0,
+                },
+                Vector {
+                    x: 4.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Vector {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -4.0,
+                },
+                lower_teal,
+            )),
+        ],
+    });
+    let background = Color::new(0.7, 0.8, 1.0);
+    World { object, background }
+}
+
+fn create_scene11() -> World {
+    let mut objects = Vec::new();
+    let perlin_texture = Texture::Noise(Noise::new(4.0));
+    objects.push(Object::Sphere(Sphere {
+        center: Point::new(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        material: Material::Simple(Simple {
+            texture: perlin_texture.clone(),
+        }),
+    }));
+    objects.push(Object::Sphere(Sphere {
+        center: Point::new(0.0, 2.0, 0.0),
+        radius: 2.0,
+        material: Material::Simple(Simple {
+            texture: perlin_texture,
+        }),
+    }));
+
+    let light = Material::Light(Light {
+        color: Color::new(4.0, 4.0, 4.0),
+    });
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 3.0,
+            y: 1.0,
+            z: -2.0,
+        },
+        Vector {
+            x: 2.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 2.0,
+            z: 0.0,
+        },
+        light,
+    )));
+
+    let object = Object::Collection(Collection { objects });
+    let background = Color::new(0.0, 0.0, 0.0);
+
+    World { object, background }
 }

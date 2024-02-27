@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::data::Size;
-use crate::material::Deflect;
+use crate::material::{Deflect, Emit};
 use crate::object::{Hit, Object};
 use crate::ray::Ray;
 use crate::vector::{Point, Vector};
@@ -49,17 +49,15 @@ pub fn render(
     let viewport_u = u * viewport_size.width;
     let viewport_v = -v * viewport_size.height;
 
-
     let pixel_delta_u = viewport_u / settings.size.width as f64;
     let pixel_delta_v = viewport_v / settings.size.height as f64;
 
-    let viewport_origin = settings.camera_position
-        - focal_length * w
-        - viewport_u / 2.0
-        - viewport_v / 2.0;
+    let viewport_origin =
+        settings.camera_position - focal_length * w - viewport_u / 2.0 - viewport_v / 2.0;
     let origin_pixel = viewport_origin + (pixel_delta_u + pixel_delta_v) / 2.0;
 
-    let defocus_radius = settings.focus_distance as f64 * (settings.defocus_angle as f64 / 2.0).to_radians().tan();
+    let defocus_radius =
+        settings.focus_distance as f64 * (settings.defocus_angle as f64 / 2.0).to_radians().tan();
     let defocus_u = u * defocus_radius;
     let defocus_v = v * defocus_radius;
 
@@ -82,7 +80,7 @@ pub fn render(
                         defocus_u,
                         defocus_v,
                     );
-                    ray_color(&ray, &world, settings.max_depth)
+                    ray_color(&ray, &world.object, &world.background, settings.max_depth)
                 })
                 .collect::<Vec<_>>();
             let color: Color = samples.into();
@@ -113,7 +111,15 @@ pub fn render(
     }
 }
 
-fn get_ray(pixel_center: Point, camera_position: Point, pixel_du: Vector, pixel_dv: Vector, defocus_angle: f32, defocus_u: Vector, defocus_v: Vector) -> Ray {
+fn get_ray(
+    pixel_center: Point,
+    camera_position: Point,
+    pixel_du: Vector,
+    pixel_dv: Vector,
+    defocus_angle: f32,
+    defocus_u: Vector,
+    defocus_v: Vector,
+) -> Ray {
     let pixel_sample = pixel_center + pixel_sample_square(pixel_du, pixel_dv);
 
     let ray_origin = if defocus_angle > 0.0 {
@@ -136,19 +142,21 @@ fn defocus_disk_sample(camera_position: Point, defocus_u: Vector, defocus_v: Vec
     return camera_position + (p.x * defocus_u) + (p.y * defocus_v);
 }
 
-fn ray_color(ray: &Ray, obj: &Object, depth: u32) -> Color {
+fn ray_color(ray: &Ray, obj: &Object, background: &Color, depth: u32) -> Color {
     if depth == 0 {
         return Color::BLACK;
     }
 
-    if let Some(hit) = obj.hit(ray, 0.001..f64::INFINITY) {
-        if let Some(reflection) = hit.material.deflect(ray, &hit) {
-            return reflection.attenuation * ray_color(&reflection.ray, obj, depth - 1);
-        }
-        return Color::BLACK;
-    }
+    let Some(hit) = obj.hit(ray, 0.001..f64::INFINITY) else {
+        return *background;
+    };
 
-    let unit_direction = ray.direction.normalize();
-    let a = 0.5 * (unit_direction.y + 1.0);
-    Color::new(1.0, 1.0, 1.0) * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
+    let color_from_emission = hit.material.emit(hit.u, hit.v, &hit.point);
+    let Some(deflection) = hit.material.deflect(ray, &hit) else {
+        return color_from_emission;
+    };
+
+    let color_from_deflection =
+        deflection.attenuation * ray_color(&deflection.ray, obj, background, depth - 1);
+    color_from_emission + color_from_deflection
 }

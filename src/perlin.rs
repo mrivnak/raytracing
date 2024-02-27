@@ -1,5 +1,5 @@
-use rand::Rng;
 use crate::vector::{Point, Vector};
+use rand::Rng;
 
 #[derive(Clone)]
 pub struct Perlin {
@@ -12,7 +12,9 @@ pub struct Perlin {
 impl Perlin {
     const POINT_COUNT: usize = 256;
     pub fn new() -> Self {
-        let ranvec = (0..Self::POINT_COUNT).map(|_| Vector::random_with_range(-1.0..1.0).normalize()).collect();
+        let ranvec = (0..Self::POINT_COUNT)
+            .map(|_| Vector::random_with_range(-1.0..1.0).normalize())
+            .collect();
         let perm_x = Self::perlin_generate_perm();
         let perm_y = Self::perlin_generate_perm();
         let perm_z = Self::perlin_generate_perm();
@@ -41,9 +43,10 @@ impl Perlin {
         for di in 0..2 {
             for dj in 0..2 {
                 for dk in 0..2 {
-                    c[di][dj][dk] = self.ranvec[(self.perm_x[((i + di as i32) & 255) as usize] ^
-                                                  self.perm_y[((j + dj as i32) & 255) as usize] ^
-                                                  self.perm_z[((k + dk as i32) & 255) as usize]) as usize];
+                    c[di][dj][dk] = self.ranvec[(self.perm_x[((i + di as i32) & 255) as usize]
+                        ^ self.perm_y[((j + dj as i32) & 255) as usize]
+                        ^ self.perm_z[((k + dk as i32) & 255) as usize])
+                        as usize];
                 }
             }
         }
@@ -61,10 +64,10 @@ impl Perlin {
             for j in 0..2 {
                 for k in 0..2 {
                     let weight_v = Vector::new(u - i as f64, v - j as f64, w - k as f64);
-                    accum += (i as f64 * uu + (1.0 - i as f64) * (1.0 - uu)) *
-                             (j as f64 * vv + (1.0 - j as f64) * (1.0 - vv)) *
-                             (k as f64 * ww + (1.0 - k as f64) * (1.0 - ww)) *
-                             c[i][j][k].dot(&weight_v);
+                    accum += (i as f64 * uu + (1.0 - i as f64) * (1.0 - uu))
+                        * (j as f64 * vv + (1.0 - j as f64) * (1.0 - vv))
+                        * (k as f64 * ww + (1.0 - k as f64) * (1.0 - ww))
+                        * c[i][j][k].dot(&weight_v);
                 }
             }
         }

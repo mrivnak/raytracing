@@ -4,14 +4,13 @@ mod color;
 mod data;
 mod material;
 mod object;
+mod perlin;
 mod ray;
 mod renderer;
-mod vector;
-mod world;
 mod settings;
 mod texture;
-mod perlin;
-
+mod vector;
+mod world;
 
 use eframe::egui;
 use humanize_duration::prelude::DurationExt;
@@ -27,7 +26,7 @@ use uuid::Uuid;
 use crate::renderer::render;
 use crate::settings::{load_settings, save_settings, RenderSettings};
 
-use crate::world::Scene;
+use crate::world::{get_scene_camera, Scene};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // TODO: add a way to run from CLI for benchmarking
@@ -186,7 +185,23 @@ impl eframe::App for RaytracerApp {
                                 Scene::Scene9,
                                 Scene::Scene9.to_string(),
                             );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene10,
+                                Scene::Scene10.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::Scene11,
+                                Scene::Scene11.to_string(),
+                            );
                         });
+                    if ui.button("Reset camera").clicked() {
+                        let cam_settings = get_scene_camera(&self.render_settings.scene);
+                        self.render_settings.camera_position = cam_settings.camera_position;
+                        self.render_settings.focus_point = cam_settings.focus_point;
+                        self.render_settings.field_of_view = cam_settings.field_of_view;
+                    }
                     ui.end_row();
 
                     ui.label("Width");
@@ -250,15 +265,21 @@ impl eframe::App for RaytracerApp {
                     ui.end_row();
 
                     ui.label("Field of View");
-                    ui.add(egui::DragValue::new(&mut self.render_settings.field_of_view).speed(0.1));
+                    ui.add(
+                        egui::DragValue::new(&mut self.render_settings.field_of_view).speed(0.1),
+                    );
                     ui.end_row();
 
                     ui.label("Defocus Angle");
-                    ui.add(egui::DragValue::new(&mut self.render_settings.defocus_angle).speed(0.1));
+                    ui.add(
+                        egui::DragValue::new(&mut self.render_settings.defocus_angle).speed(0.1),
+                    );
                     ui.end_row();
 
                     ui.label("Focus Distance");
-                    ui.add(egui::DragValue::new(&mut self.render_settings.focus_distance).speed(0.1));
+                    ui.add(
+                        egui::DragValue::new(&mut self.render_settings.focus_distance).speed(0.1),
+                    );
                     ui.end_row();
                 });
 
@@ -293,5 +314,3 @@ impl eframe::App for RaytracerApp {
         }
     }
 }
-
-

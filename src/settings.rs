@@ -1,10 +1,10 @@
-use std::error::Error;
-use std::io::{ErrorKind, Read, Write};
-use log::info;
-use serde::{Deserialize, Serialize};
 use crate::data::Size;
 use crate::vector::Point;
 use crate::world::Scene;
+use log::info;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::io::{ErrorKind, Read, Write};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RenderSettings {
@@ -17,6 +17,12 @@ pub struct RenderSettings {
     pub defocus_angle: f32,
     pub focus_distance: f32,
     pub scene: Scene,
+}
+
+pub struct CameraSettings {
+    pub camera_position: Point,
+    pub focus_point: Point,
+    pub field_of_view: f32,
 }
 
 impl Default for RenderSettings {

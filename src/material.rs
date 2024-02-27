@@ -1,9 +1,9 @@
 use crate::color::Color;
 use crate::object::{Collision, Facing};
 use crate::ray::Ray;
+use crate::texture::{ColorAt, Texture};
 use crate::vector::Vector;
 use enum_dispatch::enum_dispatch;
-use crate::texture::{ColorAt, Texture};
 
 pub struct Deflection {
     pub attenuation: Color,
@@ -17,11 +17,19 @@ pub enum Material {
     Metal,
     Dielectric,
     Simple,
+    Light,
 }
 
 #[enum_dispatch(Material)]
 pub trait Deflect {
     fn deflect(&self, ray: &Ray, hit: &Collision) -> Option<Deflection>;
+}
+
+#[enum_dispatch(Material)]
+pub trait Emit {
+    fn emit(&self, _u: f64, _v: f64, _point: &Vector) -> Color {
+        Color::BLACK
+    }
 }
 
 #[derive(Clone)]
@@ -47,6 +55,8 @@ impl Deflect for Lambertian {
     }
 }
 
+impl Emit for Lambertian {}
+
 #[derive(Clone)]
 pub struct Metal {
     pub albedo: Color,
@@ -67,9 +77,12 @@ impl Deflect for Metal {
     }
 }
 
+impl Emit for Metal {}
+
 #[derive(Clone)]
 pub struct Dielectric {
     pub refraction_index: f64,
+    // TODO: add fuzz
 }
 
 impl Deflect for Dielectric {
@@ -105,6 +118,8 @@ impl Deflect for Dielectric {
     }
 }
 
+impl Emit for Dielectric {}
+
 impl Dielectric {
     fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
         let r0 = ((1.0 - refraction_index) / (1.0 + refraction_index)).powi(2);
@@ -132,5 +147,24 @@ impl Deflect for Simple {
             attenuation: self.texture.color_at(hit.u, hit.v, &hit.point),
             ray: scattered,
         })
+    }
+}
+
+impl Emit for Simple {}
+
+#[derive(Clone)]
+pub struct Light {
+    pub color: Color,
+}
+
+impl Deflect for Light {
+    fn deflect(&self, _ray: &Ray, _hit: &Collision) -> Option<Deflection> {
+        None
+    }
+}
+
+impl Emit for Light {
+    fn emit(&self, _u: f64, _v: f64, _point: &Vector) -> Color {
+        self.color
     }
 }
