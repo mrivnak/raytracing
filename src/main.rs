@@ -142,6 +142,11 @@ impl eframe::App for RaytracerApp {
                             // TODO: there's probably a way to use a macro for this
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
+                                Scene::Scene12,
+                                Scene::Scene12.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
                                 Scene::Scene1,
                                 Scene::Scene1.to_string(),
                             );

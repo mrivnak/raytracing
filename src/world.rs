@@ -30,6 +30,8 @@ pub enum Scene {
     Scene10,
     #[strum(to_string = "Simple Light")]
     Scene11,
+    #[strum(to_string = "Cornell Box")]
+    Scene12,
 }
 
 pub struct World {
@@ -50,6 +52,7 @@ pub fn create_world(scene: &Scene) -> World {
         Scene::Scene9 => create_scene9(),
         Scene::Scene10 => create_scene10(),
         Scene::Scene11 => create_scene11(),
+        Scene::Scene12 => create_scene12(),
     }
 }
 
@@ -109,6 +112,11 @@ pub fn get_scene_camera(scene: &Scene) -> CameraSettings {
             camera_position: Point::new(26.0, 3.0, 6.0),
             focus_point: Point::new(0.0, 2.0, 0.0),
             field_of_view: 20.0,
+        },
+        Scene::Scene12 => CameraSettings {
+            camera_position: Point::new(278.0, 278.0, -800.0),
+            focus_point: Point::new(278.0, 278.0, 0.0),
+            field_of_view: 40.0,
         },
     }
 }
@@ -622,6 +630,137 @@ fn create_scene11() -> World {
             z: 0.0,
         },
         light,
+    )));
+
+    let object = Object::Collection(Collection { objects });
+    let background = Color::new(0.0, 0.0, 0.0);
+
+    World { object, background }
+}
+
+fn create_scene12() -> World {
+    let mut objects = Vec::new();
+
+    let red = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.65, 0.05, 0.05),
+    });
+    let white = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.73, 0.73, 0.73),
+    });
+    let green = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.12, 0.45, 0.15),
+    });
+    let light = Material::Light(Light {
+        color: Color::new(15.0, 15.0, 15.0),
+    });
+
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        green,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        red,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 343.0,
+            y: 554.0,
+            z: 332.0,
+        },
+        Vector {
+            x: -130.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: -105.0,
+        },
+        light,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        white.clone(),
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 555.0,
+            y: 555.0,
+            z: 555.0,
+        },
+        Vector {
+            x: -555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: -555.0,
+        },
+        white.clone(),
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        Vector {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        white.clone(),
     )));
 
     let object = Object::Collection(Collection { objects });
