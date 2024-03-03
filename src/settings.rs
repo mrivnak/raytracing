@@ -1,12 +1,15 @@
 use crate::data::Size;
 use crate::vector::Point;
 use crate::world::Scene;
+#[cfg(feature = "gui")]
 use log::info;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "gui")]
 use std::error::Error;
+#[cfg(feature = "gui")]
 use std::io::{ErrorKind, Read, Write};
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RenderSettings {
     pub size: Size<u32>,
     pub samples: u32,
@@ -47,11 +50,12 @@ impl Default for RenderSettings {
             field_of_view: 90.0,
             defocus_angle: 0.0,
             focus_distance: 10.0,
-            scene: Scene::Scene1,
+            scene: Scene::OneSphere,
         }
     }
 }
 
+#[cfg(feature = "gui")]
 pub fn save_settings(settings: &RenderSettings) -> Result<(), std::io::Error> {
     let path = get_settings_path();
     let parent_dir = path.parent().unwrap();
@@ -63,6 +67,7 @@ pub fn save_settings(settings: &RenderSettings) -> Result<(), std::io::Error> {
     file.write_all(toml.as_bytes())
 }
 
+#[cfg(feature = "gui")]
 pub fn load_settings() -> Result<RenderSettings, Box<dyn Error>> {
     let path = get_settings_path();
     let mut file = match std::fs::File::open(path) {
@@ -80,6 +85,7 @@ pub fn load_settings() -> Result<RenderSettings, Box<dyn Error>> {
     Ok(settings)
 }
 
+#[cfg(feature = "gui")]
 fn get_settings_path() -> std::path::PathBuf {
     let mut path = dirs::config_dir().unwrap();
     path.push("raytracer");

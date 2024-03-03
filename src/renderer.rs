@@ -1,4 +1,4 @@
-use crate::color::Color;
+use crate::color::{Clamp, Color, GammaCorrect};
 use crate::data::Size;
 use crate::material::{Deflect, Emit};
 use crate::object::{Hit, Object};
@@ -6,12 +6,15 @@ use crate::ray::Ray;
 use crate::vector::{Point, Vector};
 use crate::world::create_world;
 use crate::RenderSettings;
+#[cfg(feature = "gui")]
 use eframe::egui;
 use image::{ImageOutputFormat, RgbImage};
 use log::info;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
+#[cfg(feature = "gui")]
 use single_value_channel::Updater;
 use std::io::Cursor;
+#[cfg(feature = "gui")]
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
 
@@ -23,8 +26,8 @@ const V_UP: Vector = Vector {
 
 pub fn render(
     settings: RenderSettings,
-    sender: Updater<f32>,
-    context: &mut egui::Context,
+    #[cfg(feature = "gui")] sender: Updater<f32>,
+    #[cfg(feature = "gui")] context: &mut egui::Context,
 ) -> Vec<u8> {
     let image = Arc::new(Mutex::new(RgbImage::new(
         settings.size.width,
@@ -63,7 +66,9 @@ pub fn render(
 
     let world = create_world(&settings.scene);
 
+    #[cfg(feature = "gui")]
     let completed_pixels = AtomicU32::new(0);
+
     (0..settings.size.width).into_par_iter().for_each(|x| {
         for y in 0..settings.size.height {
             let pixel_center =
@@ -83,16 +88,21 @@ pub fn render(
                     ray_color(&ray, &world.object, &world.background, settings.max_depth)
                 })
                 .collect::<Vec<_>>();
-            let color: Color = samples.into();
+            let color: Color = Color::from(samples).gamma_correct().clamp(0.0, 1.0);
 
             image
                 .lock()
                 .unwrap()
                 .put_pixel(x, y, image::Rgb(color.into()));
-            let pixels = completed_pixels.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let _ = sender
-                .update((pixels + 1) as f32 / (settings.size.width * settings.size.height) as f32);
-            context.request_repaint();
+
+            #[cfg(feature = "gui")]
+            {
+                let pixels = completed_pixels.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let _ = sender.update(
+                    (pixels + 1) as f32 / (settings.size.width * settings.size.height) as f32,
+                );
+                context.request_repaint();
+            }
         }
     });
 

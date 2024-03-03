@@ -1,37 +1,43 @@
 use crate::color::Color;
 use crate::material::{Dielectric, Lambertian, Light, Material, Metal, Simple};
-use crate::object::{Collection, Object, Quad, Sphere};
+use crate::object::{build_cuboid, Collection, Object, Quad, Sphere};
 use crate::settings::CameraSettings;
 use crate::texture::{Image, Noise, Texture};
 use crate::vector::{Point, Vector};
 use serde::{Deserialize, Serialize};
+use crate::quaternion::Quaternion;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, strum_macros::Display)]
+#[derive(
+Debug, Default, Clone, PartialEq, Deserialize, Serialize, strum_macros::Display, clap::ValueEnum,
+)]
 pub enum Scene {
     #[strum(to_string = "One Sphere")]
-    Scene1,
+    OneSphere,
     #[strum(to_string = "Metal Spheres")]
-    Scene2,
+    MetalSpheres,
     #[strum(to_string = "Glass Spheres")]
-    Scene3,
+    GlassSpheres,
     #[strum(to_string = "Three Spheres")]
-    Scene4,
+    ThreeSpheres,
     #[strum(to_string = "Hollow Glass Sphere")]
-    Scene5,
+    HollowGlassSphere,
     #[strum(to_string = "Red and Blue")]
-    Scene6,
+    RedAndBlue,
     #[strum(to_string = "Many Spheres")]
-    Scene7,
+    ManySpheres,
     #[strum(to_string = "Earth")]
-    Scene8,
+    Earth,
     #[strum(to_string = "Two Perlin Spheres")]
-    Scene9,
+    TwoPerlinSpheres,
     #[strum(to_string = "Quads")]
-    Scene10,
+    Quads,
     #[strum(to_string = "Simple Light")]
-    Scene11,
-    #[strum(to_string = "Cornell Box")]
-    Scene12,
+    SimpleLight,
+    #[strum(to_string = "Cornell Box (Empty)")]
+    CornellBoxEmpty,
+    #[default]
+    #[strum(to_string = "Cornell Box (Two boxes)")]
+    CornellBoxTwoBoxes,
 }
 
 pub struct World {
@@ -39,81 +45,89 @@ pub struct World {
     pub background: Color,
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn create_world(scene: &Scene) -> World {
     match scene {
-        Scene::Scene1 => create_scene1(),
-        Scene::Scene2 => create_scene2(),
-        Scene::Scene3 => create_scene3(),
-        Scene::Scene4 => create_scene4(),
-        Scene::Scene5 => create_scene5(),
-        Scene::Scene6 => create_scene6(),
-        Scene::Scene7 => create_scene7(),
-        Scene::Scene8 => create_scene8(),
-        Scene::Scene9 => create_scene9(),
-        Scene::Scene10 => create_scene10(),
-        Scene::Scene11 => create_scene11(),
-        Scene::Scene12 => create_scene12(),
+        Scene::OneSphere => create_scene_one_sphere(),
+        Scene::MetalSpheres => create_scene_metal_spheres(),
+        Scene::GlassSpheres => create_scene_glass_spheres(),
+        Scene::ThreeSpheres => create_scene_three_spheres(),
+        Scene::HollowGlassSphere => create_scene_hollow_glass_sphere(),
+        Scene::RedAndBlue => create_scene_red_and_blue(),
+        Scene::ManySpheres => create_scene_many_spheres(),
+        Scene::Earth => create_scene_earth(),
+        Scene::TwoPerlinSpheres => create_scene_two_perlin_spheres(),
+        Scene::Quads => create_scene_quads(),
+        Scene::SimpleLight => create_scene_simple_light(),
+        Scene::CornellBoxEmpty => create_scene_cornell_box_empty(),
+        Scene::CornellBoxTwoBoxes => create_scene_cornell_box_two_boxes(),
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn get_scene_camera(scene: &Scene) -> CameraSettings {
     match scene {
-        Scene::Scene1 => CameraSettings {
+        Scene::OneSphere => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene2 => CameraSettings {
+        Scene::MetalSpheres => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene3 => CameraSettings {
+        Scene::GlassSpheres => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene4 => CameraSettings {
+        Scene::ThreeSpheres => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene5 => CameraSettings {
+        Scene::HollowGlassSphere => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene6 => CameraSettings {
+        Scene::RedAndBlue => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 0.0),
             focus_point: Point::new(0.0, 0.0, -1.0),
             field_of_view: 90.0,
         },
-        Scene::Scene7 => CameraSettings {
+        Scene::ManySpheres => CameraSettings {
             camera_position: Point::new(13.0, 2.0, 3.0),
             focus_point: Point::new(0.0, 0.0, 0.0),
             field_of_view: 20.0,
         },
-        Scene::Scene8 => CameraSettings {
+        Scene::Earth => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 12.0),
             focus_point: Point::new(0.0, 0.0, 0.0),
             field_of_view: 20.0,
         },
-        Scene::Scene9 => CameraSettings {
+        Scene::TwoPerlinSpheres => CameraSettings {
             camera_position: Point::new(13.0, 2.0, 3.0),
             focus_point: Point::new(0.0, 0.0, 0.0),
             field_of_view: 20.0,
         },
-        Scene::Scene10 => CameraSettings {
+        Scene::Quads => CameraSettings {
             camera_position: Point::new(0.0, 0.0, 9.0),
             focus_point: Point::new(0.0, 0.0, 0.0),
             field_of_view: 80.0,
         },
-        Scene::Scene11 => CameraSettings {
+        Scene::SimpleLight => CameraSettings {
             camera_position: Point::new(26.0, 3.0, 6.0),
             focus_point: Point::new(0.0, 2.0, 0.0),
             field_of_view: 20.0,
         },
-        Scene::Scene12 => CameraSettings {
+        Scene::CornellBoxEmpty => CameraSettings {
+            camera_position: Point::new(278.0, 278.0, -800.0),
+            focus_point: Point::new(278.0, 278.0, 0.0),
+            field_of_view: 40.0,
+        },
+        Scene::CornellBoxTwoBoxes => CameraSettings {
             camera_position: Point::new(278.0, 278.0, -800.0),
             focus_point: Point::new(278.0, 278.0, 0.0),
             field_of_view: 40.0,
@@ -121,7 +135,8 @@ pub fn get_scene_camera(scene: &Scene) -> CameraSettings {
     }
 }
 
-fn create_scene1() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_one_sphere() -> World {
     let object = Object::Collection(Collection {
         objects: vec![
             Object::Sphere(Sphere {
@@ -144,7 +159,8 @@ fn create_scene1() -> World {
     World { object, background }
 }
 
-fn create_scene2() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_metal_spheres() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -188,7 +204,8 @@ fn create_scene2() -> World {
     World { object, background }
 }
 
-fn create_scene3() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_glass_spheres() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -231,7 +248,8 @@ fn create_scene3() -> World {
     World { object, background }
 }
 
-fn create_scene4() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_three_spheres() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -274,7 +292,8 @@ fn create_scene4() -> World {
     World { object, background }
 }
 
-fn create_scene5() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_hollow_glass_sphere() -> World {
     let material_ground = Material::Lambertian(Lambertian {
         albedo: Color::new(0.8, 0.8, 0.0),
     });
@@ -322,7 +341,8 @@ fn create_scene5() -> World {
     World { object, background }
 }
 
-fn create_scene6() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_red_and_blue() -> World {
     let material_left = Material::Lambertian(Lambertian {
         albedo: Color::new(0.0, 0.0, 1.0),
     });
@@ -350,7 +370,8 @@ fn create_scene6() -> World {
     World { object, background }
 }
 
-fn create_scene7() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_many_spheres() -> World {
     let mut objects = vec![];
 
     let ground_material = Material::Lambertian(Lambertian {
@@ -438,7 +459,8 @@ fn create_scene7() -> World {
     World { object, background }
 }
 
-fn create_scene8() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_earth() -> World {
     let earth_texture = Texture::Image(Image::load("res/earth.jpg".into()).unwrap_or_default());
     let earth_material = Material::Simple(Simple {
         texture: earth_texture,
@@ -453,7 +475,8 @@ fn create_scene8() -> World {
     World { object, background }
 }
 
-fn create_scene9() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_two_perlin_spheres() -> World {
     let perlin_texture = Texture::Noise(Noise::new(4.0));
     let perlin_material = Material::Simple(Simple {
         texture: perlin_texture,
@@ -477,7 +500,8 @@ fn create_scene9() -> World {
     World { object, background }
 }
 
-fn create_scene10() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_quads() -> World {
     let left_red = Material::Lambertian(Lambertian {
         albedo: Color::new(1.0, 0.2, 0.2),
     });
@@ -592,7 +616,8 @@ fn create_scene10() -> World {
     World { object, background }
 }
 
-fn create_scene11() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_simple_light() -> World {
     let mut objects = Vec::new();
     let perlin_texture = Texture::Noise(Noise::new(4.0));
     objects.push(Object::Sphere(Sphere {
@@ -638,7 +663,8 @@ fn create_scene11() -> World {
     World { object, background }
 }
 
-fn create_scene12() -> World {
+#[cfg(not(tarpaulin_include))]
+fn create_scene_cornell_box_empty() -> World {
     let mut objects = Vec::new();
 
     let red = Material::Lambertian(Lambertian {
@@ -762,6 +788,146 @@ fn create_scene12() -> World {
         },
         white.clone(),
     )));
+
+    let object = Object::Collection(Collection { objects });
+    let background = Color::new(0.0, 0.0, 0.0);
+
+    World { object, background }
+}
+
+#[cfg(not(tarpaulin_include))]
+fn create_scene_cornell_box_two_boxes() -> World {
+    let mut objects = Vec::new();
+
+    let red = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.65, 0.05, 0.05),
+    });
+    let white = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.73, 0.73, 0.73),
+    });
+    let green = Material::Lambertian(Lambertian {
+        albedo: Color::new(0.12, 0.45, 0.15),
+    });
+    let light = Material::Light(Light {
+        color: Color::new(15.0, 15.0, 15.0),
+    });
+
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        green,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        red,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 343.0,
+            y: 554.0,
+            z: 332.0,
+        },
+        Vector {
+            x: -130.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: -105.0,
+        },
+        light,
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        white.clone(),
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 555.0,
+            y: 555.0,
+            z: 555.0,
+        },
+        Vector {
+            x: -555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: -555.0,
+        },
+        white.clone(),
+    )));
+    objects.push(Object::Quad(Quad::new(
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 555.0,
+        },
+        Vector {
+            x: 555.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        Vector {
+            x: 0.0,
+            y: 555.0,
+            z: 0.0,
+        },
+        white.clone(),
+    )));
+
+    // for quad in build_cuboid(Point::new(130.0, 0.0, 65.0), Point::new(295.0, 165.0, 230.0), Quaternion::new(0.0, 0.0, 0.0, 0.0), white.clone()) {
+    //     objects.push(Object::Quad(quad));
+    // }
+    for quad in build_cuboid(Point::new(265.0, 0.0, 295.0), Point::new(430.0, 330.0, 460.0), Quaternion::from_axis_angle(Vector::new(0.0, 1.0, 0.0), 30.0_f64.to_radians()), white.clone()) {
+        objects.push(Object::Quad(quad));
+    }
+
 
     let object = Object::Collection(Collection { objects });
     let background = Color::new(0.0, 0.0, 0.0);

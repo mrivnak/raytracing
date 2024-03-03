@@ -2,15 +2,16 @@ use crate::vector::Vector;
 use rand::Rng;
 use std::ops::Range;
 
-trait GammaCorrect {
+pub trait GammaCorrect {
     fn gamma_correct(self) -> Self;
 }
 
-trait Clamp {
+pub trait Clamp {
     fn clamp(self, min: f64, max: f64) -> Self;
 }
 
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Color {
     pub r: f64,
     pub g: f64,
@@ -84,9 +85,9 @@ impl Color {
 impl From<Color> for [u8; 3] {
     fn from(color: Color) -> [u8; 3] {
         [
-            (color.r * 254.999) as u8,
-            (color.g * 254.999) as u8,
-            (color.b * 254.999) as u8,
+            (color.r * 255.0) as u8,
+            (color.g * 255.0) as u8,
+            (color.b * 255.0) as u8,
         ]
     }
 }
@@ -112,6 +113,16 @@ impl From<&[u8]> for Color {
     }
 }
 
+impl From<Vector> for Color {
+    fn from(vector: Vector) -> Color {
+        Color {
+            r: vector.x,
+            g: vector.y,
+            b: vector.z,
+        }
+    }
+}
+
 impl From<Vec<Color>> for Color {
     fn from(colors: Vec<Color>) -> Color {
         let mut r = 0.0;
@@ -129,7 +140,7 @@ impl From<Vec<Color>> for Color {
         g /= samples;
         b /= samples;
 
-        Color { r, g, b }.gamma_correct().clamp(0.0, 1.0)
+        Color { r, g, b }
     }
 }
 
@@ -149,16 +160,6 @@ impl Clamp for Color {
             r: self.r.clamp(min, max),
             g: self.g.clamp(min, max),
             b: self.b.clamp(min, max),
-        }
-    }
-}
-
-impl From<Vector> for Color {
-    fn from(vector: Vector) -> Color {
-        Color {
-            r: vector.x,
-            g: vector.y,
-            b: vector.z,
         }
     }
 }
@@ -207,6 +208,18 @@ impl std::ops::Mul<Color> for f64 {
     }
 }
 
+impl std::ops::Div<f64> for Color {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self {
+        Self {
+            r: self.r / rhs,
+            g: self.g / rhs,
+            b: self.b / rhs,
+        }
+    }
+}
+
 impl std::ops::Div<Color> for f64 {
     type Output = Color;
 
@@ -219,14 +232,127 @@ impl std::ops::Div<Color> for f64 {
     }
 }
 
-impl std::ops::Div<f64> for Color {
-    type Output = Self;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
 
-    fn div(self, rhs: f64) -> Self {
-        Self {
-            r: self.r / rhs,
-            g: self.g / rhs,
-            b: self.b / rhs,
-        }
+    #[test]
+    fn test_new() {
+        let color = Color::new(0.1, 0.2, 0.3);
+        assert_eq!(color.r, 0.1);
+        assert_eq!(color.g, 0.2);
+        assert_eq!(color.b, 0.3);
+    }
+
+    #[test_case(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)] // black
+    #[test_case(0.0, 0.0, 1.0, 1.0, 1.0, 1.0)] // white
+    #[test_case(0.0, 1.0, 1.0, 1.0, 0.0, 0.0)] // red
+    #[test_case(0.5, 1.0, 1.0, 0.0, 1.0, 1.0)] // cyan
+    #[test_case(0.0, 0.0, 0.75, 0.75, 0.75, 0.75)] // light gray
+    fn test_hsv_to_rgb(h: f64, s: f64, v: f64, r: f64, g: f64, b: f64) {
+        let color = Color::hsv_to_rgb(h, s, v);
+        assert_eq!(color, Color::new(r, g, b));
+    }
+
+    #[test]
+    fn test_from_color_for_u8_array() {
+        let color = Color::new(0.0, 0.5, 1.0);
+        let u8_array: [u8; 3] = color.into();
+        assert_eq!(u8_array, [0, 127, 255]);
+    }
+
+    #[test]
+    fn test_from_u8_array_for_color() {
+        let u8_array = [0, 51, 255];
+        let color: Color = u8_array.into();
+        assert_eq!(color, Color::new(0.0, 0.2, 1.0));
+    }
+
+    #[test]
+    fn test_from_u8_slice_for_color() {
+        let slice: &[u8] = &[0, 51, 255];
+        let color: Color = slice.into();
+        assert_eq!(color, Color::new(0.0, 0.2, 1.0));
+    }
+
+    #[test]
+    #[should_panic]
+    #[cfg(debug_assertions)]
+    fn test_from_invalid_slice_for_color() {
+        let slice: &[u8] = &[0, 51, 255, 1];
+        let _: Color = slice.into();
+    }
+
+    #[test]
+    fn test_from_vector_for_color() {
+        let vector = Vector::new(0.0, 0.5, 1.0);
+        let color: Color = vector.into();
+        assert_eq!(color, Color::new(0.0, 0.5, 1.0));
+    }
+
+    #[test]
+    fn test_from_vec_of_colors_for_color() {
+        let colors = vec![Color::new(0.0, 0.5, 1.0), Color::new(0.5, 1.0, 1.0)];
+        let color: Color = colors.into();
+        assert_eq!(color, Color::new(0.25, 0.75, 1.0));
+    }
+
+    #[test]
+    fn test_gamma_correct() {
+        let color = Color::new(0.0, 0.25, 1.0);
+        let gamma_corrected = color.gamma_correct();
+        assert_eq!(gamma_corrected, Color::new(0.0, 0.5, 1.0));
+    }
+
+    #[test]
+    fn test_clamp() {
+        let color = Color::new(0.0, 0.25, 1.25);
+        let clamped = color.clamp(0.5, 1.0);
+        assert_eq!(clamped, Color::new(0.5, 0.5, 1.0));
+    }
+
+    #[test]
+    fn test_add() {
+        let color1 = Color::new(0.0, 0.25, 1.0);
+        let color2 = Color::new(0.5, 0.75, 1.0);
+        let added = color1 + color2;
+        assert_eq!(added, Color::new(0.5, 1.0, 2.0));
+    }
+
+    #[test]
+    fn test_mul() {
+        let color1 = Color::new(0.0, 0.25, 1.0);
+        let color2 = Color::new(0.5, 0.75, 1.0);
+        let multiplied = color1 * color2;
+        assert_eq!(multiplied, Color::new(0.0, 0.1875, 1.0));
+    }
+
+    #[test]
+    fn test_mul_f64_for_color() {
+        let color = Color::new(0.0, 0.25, 1.0);
+        let multiplied = 2.0 * color;
+        assert_eq!(multiplied, Color::new(0.0, 0.5, 2.0));
+    }
+
+    #[test]
+    fn test_mul_color_for_f64() {
+        let color = Color::new(0.0, 0.25, 1.0);
+        let multiplied = color * 2.0;
+        assert_eq!(multiplied, Color::new(0.0, 0.5, 2.0));
+    }
+
+    #[test]
+    fn test_div_f64_for_color() {
+        let color = Color::new(0.0, 0.25, 1.0);
+        let divided = color / 2.0;
+        assert_eq!(divided, Color::new(0.0, 0.125, 0.5));
+    }
+
+    #[test]
+    fn test_div_color_for_f64() {
+        let color = Color::new(0.1, 0.25, 1.0);
+        let divided = 2.0 / color;
+        assert_eq!(divided, Color::new(20.0, 8.0, 2.0));
     }
 }

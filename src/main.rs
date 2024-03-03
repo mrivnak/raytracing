@@ -11,26 +11,84 @@ mod settings;
 mod texture;
 mod vector;
 mod world;
+mod quaternion;
 
-use eframe::egui;
 use humanize_duration::prelude::DurationExt;
 use humanize_duration::Truncate;
-use log::{info, warn};
-
-use single_value_channel::{Receiver, Updater};
 use std::error::Error;
+
+#[cfg(not(feature = "gui"))]
+use clap::error::ErrorKind;
+#[cfg(not(feature = "gui"))]
+use clap::{CommandFactory, Parser};
+#[cfg(not(feature = "gui"))]
+use regex::Regex;
+
+#[cfg(feature = "gui")]
+use eframe::egui;
+#[cfg(feature = "gui")]
+use log::{info, warn};
+#[cfg(feature = "gui")]
+use single_value_channel::{Receiver, Updater};
+#[cfg(feature = "gui")]
 use std::thread::JoinHandle;
+#[cfg(feature = "gui")]
 use std::time::Duration;
+#[cfg(feature = "gui")]
 use uuid::Uuid;
 
 use crate::renderer::render;
-use crate::settings::{load_settings, save_settings, RenderSettings};
-
+use crate::settings::RenderSettings;
 use crate::world::{get_scene_camera, Scene};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // TODO: add a way to run from CLI for benchmarking
+#[cfg(feature = "gui")]
+use crate::settings::{load_settings, save_settings};
 
+#[cfg(not(feature = "gui"))]
+use crate::vector::Point;
+
+/// Software raytracer
+#[cfg(not(feature = "gui"))]
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Scene to render
+    #[arg(short, long, default_value = "cornell-box-empty")]
+    scene: Scene,
+
+    /// Camera position
+    #[arg(short, long)]
+    camera_position: Option<String>,
+
+    /// Focus point
+    #[arg(short, long)]
+    focus_point: Option<String>,
+
+    /// Render height
+    #[arg(short, long)]
+    height: Option<u32>,
+
+    /// Render width
+    #[arg(short, long)]
+    width: Option<u32>,
+
+    /// Samples per pixel
+    #[arg(short, long)]
+    samples: Option<u32>,
+
+    /// Output file
+    #[arg(short, long, default_value = "render.png")]
+    output: String,
+
+    /// Print settings
+    /// Print the settings and exit
+    #[arg(short, long)]
+    print_settings: bool,
+}
+
+#[cfg(feature = "gui")]
+#[cfg(not(tarpaulin_include))]
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([1920.0, 1080.0]),
@@ -50,6 +108,75 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[cfg(not(feature = "gui"))]
+fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+    let mut settings = RenderSettings {
+        scene: args.scene,
+        ..Default::default()
+    };
+
+    let scene_camera = get_scene_camera(&settings.scene);
+    settings.camera_position = scene_camera.camera_position;
+    settings.focus_point = scene_camera.focus_point;
+    settings.field_of_view = scene_camera.field_of_view;
+
+    let point_re = Regex::new(r"\(?(?:\d+(?:\.\d+)?,\s?){2}(?:\d+(?:\.\d+)?)\)?")?;
+    if let Some(camera_position) = args.camera_position.as_deref() {
+        if point_re.is_match(camera_position) {
+            let mut parts = camera_position.split(',');
+            let x = parts.next().unwrap().parse::<f64>()?;
+            let y = parts.next().unwrap().parse::<f64>()?;
+            let z = parts.next().unwrap().parse::<f64>()?;
+            settings.camera_position = Point::new(x, y, z);
+        } else {
+            let mut cmd = Args::command();
+            cmd.error(ErrorKind::ValueValidation, "Invalid camera position")
+                .exit()
+        }
+    }
+
+    if let Some(focus_point) = args.camera_position.as_deref() {
+        if point_re.is_match(focus_point) {
+            let mut parts = focus_point.split(',');
+            let x = parts.next().unwrap().parse::<f64>()?;
+            let y = parts.next().unwrap().parse::<f64>()?;
+            let z = parts.next().unwrap().parse::<f64>()?;
+            settings.focus_point = Point::new(x, y, z);
+        } else {
+            let mut cmd = Args::command();
+            cmd.error(ErrorKind::ValueValidation, "Invalid focus point")
+                .exit()
+        }
+    }
+
+    if let Some(height) = args.height {
+        settings.size.height = height;
+    }
+
+    if let Some(width) = args.width {
+        settings.size.width = width;
+    }
+
+    if let Some(samples) = args.samples {
+        settings.samples = samples;
+    }
+
+    if args.print_settings {
+        println!("{:#?}", settings);
+        return Ok(());
+    }
+
+    let start = std::time::Instant::now();
+    let image = render(settings);
+    let duration = start.elapsed();
+    std::fs::write(args.output, &image)?;
+    println!("Render time: {}", duration.human(Truncate::Millis));
+    Ok(())
+}
+
+#[cfg(feature = "gui")]
+#[cfg(not(tarpaulin_include))]
 struct RaytracerApp {
     image: Vec<u8>,
     image_id: Uuid,
@@ -60,6 +187,8 @@ struct RaytracerApp {
     progress: Receiver<f32>,
 }
 
+#[cfg(feature = "gui")]
+#[cfg(not(tarpaulin_include))]
 impl RaytracerApp {
     fn with_settings(settings: RenderSettings) -> Self {
         let (receiver, updater) = single_value_channel::channel_starting_with(0.0);
@@ -75,6 +204,8 @@ impl RaytracerApp {
     }
 }
 
+#[cfg(feature = "gui")]
+#[cfg(not(tarpaulin_include))]
 impl Default for RaytracerApp {
     fn default() -> Self {
         let image = vec![];
@@ -91,6 +222,8 @@ impl Default for RaytracerApp {
     }
 }
 
+#[cfg(feature = "gui")]
+#[cfg(not(tarpaulin_include))]
 impl eframe::App for RaytracerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.render_handle.is_some() && self.render_handle.as_ref().unwrap().is_finished() {
@@ -142,63 +275,68 @@ impl eframe::App for RaytracerApp {
                             // TODO: there's probably a way to use a macro for this
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene12,
-                                Scene::Scene12.to_string(),
+                                Scene::CornellBoxEmpty,
+                                Scene::CornellBoxEmpty.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene1,
-                                Scene::Scene1.to_string(),
+                                Scene::CornellBoxTwoBoxes,
+                                Scene::CornellBoxTwoBoxes.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene2,
-                                Scene::Scene2.to_string(),
+                                Scene::OneSphere,
+                                Scene::OneSphere.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene3,
-                                Scene::Scene3.to_string(),
+                                Scene::MetalSpheres,
+                                Scene::MetalSpheres.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene4,
-                                Scene::Scene4.to_string(),
+                                Scene::GlassSpheres,
+                                Scene::GlassSpheres.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene5,
-                                Scene::Scene5.to_string(),
+                                Scene::ThreeSpheres,
+                                Scene::ThreeSpheres.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene6,
-                                Scene::Scene6.to_string(),
+                                Scene::HollowGlassSphere,
+                                Scene::HollowGlassSphere.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene7,
-                                Scene::Scene7.to_string(),
+                                Scene::RedAndBlue,
+                                Scene::RedAndBlue.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene8,
-                                Scene::Scene8.to_string(),
+                                Scene::ManySpheres,
+                                Scene::ManySpheres.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene9,
-                                Scene::Scene9.to_string(),
+                                Scene::Earth,
+                                Scene::Earth.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene10,
-                                Scene::Scene10.to_string(),
+                                Scene::TwoPerlinSpheres,
+                                Scene::TwoPerlinSpheres.to_string(),
                             );
                             ui.selectable_value(
                                 &mut self.render_settings.scene,
-                                Scene::Scene11,
-                                Scene::Scene11.to_string(),
+                                Scene::Quads,
+                                Scene::Quads.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.render_settings.scene,
+                                Scene::SimpleLight,
+                                Scene::SimpleLight.to_string(),
                             );
                         });
                     if ui.button("Reset camera").clicked() {

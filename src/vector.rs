@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
@@ -197,5 +198,157 @@ impl std::ops::Neg for Vector {
             y: -self.y,
             z: -self.z,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dot() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let b = Vector::new(4.0, 5.0, 6.0);
+        assert_eq!(a.dot(&b), 32.0);
+    }
+
+    #[test]
+    fn test_cross() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let b = Vector::new(4.0, 5.0, 6.0);
+        assert_eq!(a.cross(&b), Vector::new(-3.0, 6.0, -3.0));
+    }
+
+    #[test]
+    fn test_length() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        assert_eq!(a.length(), 14.0_f64.sqrt());
+    }
+
+    #[test]
+    fn test_length_squared() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        assert_eq!(a.length_squared(), 14.0);
+    }
+
+    #[test]
+    fn test_normalize() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let normalized = a.normalize();
+        assert_eq!(
+            normalized,
+            Vector::new(
+                1.0 / 14.0_f64.sqrt(),
+                2.0 / 14.0_f64.sqrt(),
+                3.0 / 14.0_f64.sqrt()
+            )
+        );
+        assert_eq!(normalized.length(), 1.0);
+    }
+
+    #[test]
+    fn test_random_with_range() {
+        for _ in 0..100 {
+            let a = Vector::random_with_range(0.0..1.0);
+            assert!(a.x >= 0.0 && a.x < 1.0);
+            assert!(a.y >= 0.0 && a.y < 1.0);
+            assert!(a.z >= 0.0 && a.z < 1.0);
+        }
+    }
+
+    #[test]
+    fn test_random_in_unit_sphere() {
+        for _ in 0..100 {
+            let a = Vector::random_in_unit_sphere();
+            assert!(a.length() < 1.0);
+        }
+    }
+
+    #[test]
+    fn test_random_unit_vector() {
+        for _ in 0..100 {
+            let a = Vector::random_unit_vector();
+            assert!(
+                (a.length() - 1.0).abs() < 1e-8,
+                "a.length(): {:?}",
+                a.length()
+            );
+        }
+    }
+
+    #[test]
+    fn test_random_in_hemisphere() {
+        for _ in 0..100 {
+            let normal = Vector::new(0.0, 0.0, 1.0);
+            let a = Vector::random_in_hemisphere(&normal);
+            assert!(a.dot(&normal) > 0.0);
+        }
+    }
+
+    #[test]
+    fn test_random_in_unit_disk() {
+        for _ in 0..100 {
+            let a = Vector::random_in_unit_disk();
+            assert!(a.length() < 1.0);
+            assert_eq!(a.z, 0.0);
+        }
+    }
+
+    #[test]
+    fn test_reflect() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let n = Vector::new(0.0, 1.0, 0.0);
+        assert_eq!(v.reflect(&n), Vector::new(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn test_is_near_zero() {
+        let a = Vector::new(1e-9, 1e-9, 1e-9);
+        assert!(a.is_near_zero());
+    }
+
+    #[test]
+    fn test_add() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let b = Vector::new(4.0, 5.0, 6.0);
+        assert_eq!(a + b, Vector::new(5.0, 7.0, 9.0));
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let b = Vector::new(4.0, 5.0, 6.0);
+        assert_eq!(a - b, Vector::new(-3.0, -3.0, -3.0));
+    }
+
+    #[test]
+    fn test_mul_f64_for_vector() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        assert_eq!(a * 2.0, Vector::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn test_mul_vector_for_f64() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        assert_eq!(2.0 * a, Vector::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn test_div_f64_for_vector() {
+        let a = Vector::new(2.0, 4.0, 6.0);
+        assert_eq!(a / 2.0, Vector::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_mul_assign_f64_for_vector() {
+        let mut a = Vector::new(1.0, 2.0, 3.0);
+        a *= 2.0;
+        assert_eq!(a, Vector::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn test_neg() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        assert_eq!(-a, Vector::new(-1.0, -2.0, -3.0));
     }
 }

@@ -3,7 +3,10 @@ use crate::ray::Ray;
 use crate::vector::{Point, Vector};
 use enum_dispatch::enum_dispatch;
 use std::ops::Range;
+use crate::quaternion::Quaternion;
 
+#[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq))]
 pub enum Facing {
     Inward,
     // equivalent to true in the book
@@ -168,6 +171,38 @@ impl Hit for Quad {
     }
 }
 
+pub fn build_cuboid(a: Point, b: Point, quat: Quaternion, material: Material) -> [Quad; 6] {
+    let min = Point::new(a.x.min(b.x), a.y.min(b.y), a.z.min(b.z));
+    let max = Point::new(a.x.max(b.x), a.y.max(b.y), a.z.max(b.z));
+
+    let midpoint = (min + max) / 2.0;
+
+    let dx = Vector::new(max.x - min.x, 0.0, 0.0);
+    let dy = Vector::new(0.0, max.y - min.y, 0.0);
+    let dz = Vector::new(0.0, 0.0, max.z - min.z);
+
+    let dx = quat.rotate_point(dx);
+    let dy = quat.rotate_point(dy);
+    let dz = quat.rotate_point(dz);
+
+    // TODO: figure out quaternion rotation
+
+    [
+        Quad::new(rotate_about_midpoint(Point::new(min.x, min.y, max.z), midpoint, quat), dx, dy, material.clone()),
+        Quad::new(rotate_about_midpoint(Point::new(max.x, min.y, max.z), midpoint, quat), -dz, dy, material.clone()),
+        Quad::new(rotate_about_midpoint(Point::new(max.x, min.y, min.z), midpoint, quat), -dx, dy, material.clone()),
+        Quad::new(rotate_about_midpoint(Point::new(min.x, min.y, min.z), midpoint, quat), dz, dy, material.clone()),
+        Quad::new(rotate_about_midpoint(Point::new(min.x, max.y, max.z), midpoint, quat), dx, -dz, material.clone()),
+        Quad::new(rotate_about_midpoint(Point::new(min.x, min.y, min.z), midpoint, quat), dx, dz, material.clone()),
+    ]
+}
+
+fn rotate_about_midpoint(point: Point, midpoint: Point, quat: Quaternion) -> Point {
+    let v = point - midpoint;
+    let v = quat.rotate_point(v);
+    midpoint + v
+}
+
 pub struct Collection {
     pub objects: Vec<Object>,
 }
@@ -187,5 +222,31 @@ impl Hit for Collection {
         }
 
         record
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set_facing() {
+        let ray = Ray {
+            origin: Point::new(0.0, 0.0, 0.0),
+            direction: Vector::new(1.0, 0.0, 0.0),
+        };
+        let normal = Vector::new(1.0, 0.0, 0.0);
+        let (normal, facing) = set_facing(&ray, normal);
+        assert_eq!(normal, Vector::new(-1.0, -0.0, -0.0));
+        assert_eq!(facing, Facing::Outward);
+
+        let ray = Ray {
+            origin: Point::new(0.0, 0.0, 0.0),
+            direction: Vector::new(-1.0, 0.0, 0.0),
+        };
+        let normal = Vector::new(1.0, 0.0, 0.0);
+        let (normal, facing) = set_facing(&ray, normal);
+        assert_eq!(normal, Vector::new(1.0, 0.0, 0.0));
+        assert_eq!(facing, Facing::Inward);
     }
 }
